@@ -7,12 +7,12 @@ import ITransport, {ApiRequest, ApiResponse} from './transports/ITransport';
 import LoginSession from './LoginSession';
 
 export {
-    EAuthSessionGuardType,
-    EAuthTokenPlatformType,
-    EResult,
-    ESessionPersistence,
-    ITransport,
-    ApiRequest,
-    ApiResponse,
-    LoginSession
+	EAuthSessionGuardType,
+	EAuthTokenPlatformType,
+	EResult,
+	ESessionPersistence,
+	ITransport,
+	ApiRequest,
+	ApiResponse,
+	LoginSession
 };

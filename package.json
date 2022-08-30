@@ -23,6 +23,7 @@
 	"scripts": {
 		"prepare": "npm run build",
 		"build": "node scripts/delete-dist.js && tsc --outDir dist",
+		"lint": "npx eslint . --ext .js,.jsx,.ts,.tsx",
 		"generate-enums": "node scripts/generate-enums.js",
 		"generate-protos": "node scripts/generate-protos.js"
 	},
@@ -33,10 +34,13 @@
 		"steamid": "^2.0.0"
 	},
 	"devDependencies": {
+		"@types/node": "^10.4.0",
+		"@typescript-eslint/eslint-plugin": "^5.36.0",
+		"@typescript-eslint/parser": "^5.36.0",
+		"eslint": "^8.23.0",
 		"protobufjs-cli": "^1.0.1",
 		"steam-totp": "^2.1.2",
 		"ts-node": "^10.9.1",
-		"@types/node": "^10.4.0",
 		"typescript": "^4.8.2"
 	},
 	"engines": {
