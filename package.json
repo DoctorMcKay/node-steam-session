@@ -17,7 +17,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/DoctorMcKay/node-steam-user.git"
+		"url": "https://github.com/DoctorMcKay/node-steam-session.git"
 	},
 	"main": "dist/index.js",
 	"scripts": {
