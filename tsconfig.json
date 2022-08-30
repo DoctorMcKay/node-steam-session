@@ -12,5 +12,5 @@
 		"declaration": true,
 		"declarationMap": true
 	},
-	"include": ["src", "src/**/*.json"]
+	"include": ["src"]
 }
