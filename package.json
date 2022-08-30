@@ -1,0 +1,44 @@
+{
+	"name": "steam-session",
+	"version": "0.1.0",
+	"description": "Enables authenticating with Steam",
+	"keywords": [
+		"steam"
+	],
+	"homepage": "https://github.com/DoctorMcKay/node-steam-session",
+	"bugs": {
+		"url": "https://github.com/DoctorMcKay/node-steam-session/issues"
+	},
+	"license": "MIT",
+	"author": {
+		"name": "Alex Corn",
+		"email": "mckay@doctormckay.com",
+		"url": "https://www.doctormckay.com"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/DoctorMcKay/node-steam-user.git"
+	},
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "node scripts/delete-dist.js && tsc --outDir dist",
+		"generate-enums": "node scripts/generate-enums.js",
+		"generate-protos": "node scripts/generate-protos.js"
+	},
+	"dependencies": {
+		"axios": "^0.27.2",
+		"node-bignumber": "^1.2.2",
+		"protobufjs": "^7.1.0",
+		"steamid": "^2.0.0"
+	},
+	"devDependencies": {
+		"protobufjs-cli": "^1.0.1",
+		"steam-totp": "^2.1.2",
+		"ts-node": "^10.9.1",
+		"@types/node": "^10.4.0",
+		"typescript": "^4.8.2"
+	},
+	"engines": {
+		"node": ">=10.4.0"
+	}
+}
