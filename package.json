@@ -21,6 +21,7 @@
 	},
 	"main": "dist/index.js",
 	"scripts": {
+		"prepare": "npm run build",
 		"build": "node scripts/delete-dist.js && tsc --outDir dist",
 		"generate-enums": "node scripts/generate-enums.js",
 		"generate-protos": "node scripts/generate-protos.js"
