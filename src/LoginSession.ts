@@ -27,6 +27,7 @@ export default class LoginSession extends EventEmitter {
 
 	_pollingStartedTime?: number;
 	_pollTimer?: Timeout;
+	_pollingCanceled?: boolean;
 
 	/**
 	 * @param {EAuthTokenPlatformType} [platformType=WebBrowser]
@@ -92,6 +93,8 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	_processStartSessionResponse() {
+		this._pollingCanceled = false;
+
 		for (let i of this._startSessionResponse.allowedConfirmations) {
 			switch (i.type) {
 				case EAuthSessionGuardType.None:
@@ -135,6 +138,10 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	async _doPoll() {
+		if (this._pollingCanceled) {
+			return;
+		}
+
 		this._pollingStartedTime = this._pollingStartedTime || Date.now();
 
 		// TODO timeout polling
@@ -160,7 +167,7 @@ export default class LoginSession extends EventEmitter {
 			this.accessToken = pollResponse.accessToken;
 			this.refreshToken = pollResponse.refreshToken;
 			this.emit('authenticated');
-		} else {
+		} else if (!this._pollingCanceled) {
 			this._pollTimer = setTimeout(() => this._doPoll(), this._startSessionResponse.pollInterval * 1000);
 		}
 	}
@@ -241,6 +248,8 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	cancelLoginAttempt(): boolean {
+		this._pollingCanceled = true;
+
 		if (this._pollTimer) {
 			clearTimeout(this._pollTimer);
 			return true;
