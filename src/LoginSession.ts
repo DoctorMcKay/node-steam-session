@@ -5,7 +5,11 @@ import AuthenticationClient from './AuthenticationClient';
 import ITransport from './transports/ITransport';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import WebApiTransport from './transports/WebApiTransport';
-import {StartLoginSessionWithCredentialsDetails} from './interfaces-external';
+import {
+	StartLoginSessionWithCredentialsDetails,
+	StartSessionResponse,
+	StartSessionResponseValidAction
+} from './interfaces-external';
 import {CheckMachineAuthResponse, StartAuthSessionWithCredentialsResponse} from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
@@ -13,6 +17,8 @@ import EResult from './enums-steam/EResult';
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
+	loginTimeout: number;
+
 	accountName?: string;
 	accessToken?: string;
 	refreshToken?: string;
@@ -38,6 +44,8 @@ export default class LoginSession extends EventEmitter {
 
 		this._platformType = platformType || EAuthTokenPlatformType.WebBrowser;
 		this._handler = new AuthenticationClient(transport || new WebApiTransport());
+
+		this.loginTimeout = 30000;
 	}
 
 	get steamID(): SteamID {
@@ -70,7 +78,7 @@ export default class LoginSession extends EventEmitter {
 		}
 	}
 
-	async startWithCredentials(details: StartLoginSessionWithCredentialsDetails): Promise<void> {
+	async startWithCredentials(details: StartLoginSessionWithCredentialsDetails): Promise<StartSessionResponse> {
 		this._hadRemoteInteraction = false;
 		this._steamGuardCode = details.steamGuardCode;
 		this._steamGuardMachineToken = details.steamGuardMachineToken;
@@ -89,37 +97,50 @@ export default class LoginSession extends EventEmitter {
 		this.emit('debug', 'start session response', this._startSessionResponse);
 
 		// Use setImmediate so that the promise is resolved before we potentially emit a session
-		setImmediate(() => this._processStartSessionResponse());
+		return await this._processStartSessionResponse();
 	}
 
-	_processStartSessionResponse() {
+	async _processStartSessionResponse(): Promise<StartSessionResponse> {
 		this._pollingCanceled = false;
+
+		let validActions:StartSessionResponseValidAction[] = [];
 
 		for (let i of this._startSessionResponse.allowedConfirmations) {
 			switch (i.type) {
 				case EAuthSessionGuardType.None:
 					this.emit('debug', 'no guard required');
-					this._doPoll();
-					break;
+					// Use setImmediate here so that the promise is resolved before we potentially emit a session
+					setImmediate(() => this._doPoll());
+					return {actionRequired: false};
 
 				case EAuthSessionGuardType.EmailCode:
-					this.emit('debug', 'email code required');
-					this._attemptEmailCodeAuth();
-					break;
-
 				case EAuthSessionGuardType.DeviceCode:
-					this.emit('debug', 'device code guard required');
-					this._attemptTotpCodeAuth();
-					break;
+					let codeType = i.type == EAuthSessionGuardType.EmailCode ? 'email' : 'device';
+					this.emit('debug', `${codeType} code required`);
+
+					let authResult = await (codeType == 'email' ? this._attemptEmailCodeAuth() : this._attemptTotpCodeAuth());
+					if (authResult) {
+						// We successfully authed already, no action needed
+						return {actionRequired: false};
+					} else {
+						// We need a code from the user
+						let action:StartSessionResponseValidAction = {type: i.type};
+						if (i.message) {
+							action.detail = i.message;
+						}
+						validActions.push(action);
+						break;
+					}
 
 				case EAuthSessionGuardType.DeviceConfirmation:
 				case EAuthSessionGuardType.EmailConfirmation:
 					this.emit('debug', 'device or email confirmation guard required');
-					this.emit('authSessionGuardRequired', i.type);
-					this._doPoll();
+					validActions.push({type: i.type});
+					setImmediate(() => this._doPoll());
 					break;
 
 				case EAuthSessionGuardType.MachineToken:
+					// Do nothing here since this is handled by _attemptEmailCodeAuth
 					break;
 
 				default:
@@ -131,10 +152,19 @@ export default class LoginSession extends EventEmitter {
 						}
 					}
 
-					let err = new Error(`Unknown auth session guard type ${guardTypeString}`);
-					this.emit('error', err);
+					throw new Error(`Unknown auth session guard type ${guardTypeString}`);
 			}
 		}
+
+		// If we got here but we have no valid actions, something went wrong
+		if (validActions.length == 0) {
+			throw new Error('Login requires action, but we can\'t tell what kind of action is required');
+		}
+
+		return {
+			actionRequired: true,
+			validActions
+		};
 	}
 
 	async _doPoll() {
@@ -142,9 +172,20 @@ export default class LoginSession extends EventEmitter {
 			return;
 		}
 
-		this._pollingStartedTime = this._pollingStartedTime || Date.now();
+		// If we called _doPoll outside of an existing timer, cancel the timer
+		clearTimeout(this._pollTimer);
 
-		// TODO timeout polling
+		if (!this._pollingStartedTime) {
+			this._pollingStartedTime = Date.now();
+			this.emit('polling');
+		}
+
+		let totalPollingTime = Date.now() - this._pollingStartedTime;
+		if (totalPollingTime >= this.loginTimeout) {
+			this.emit('timeout');
+			this.cancelLoginAttempt();
+			return;
+		}
 
 		let pollResponse;
 		try {
@@ -172,15 +213,18 @@ export default class LoginSession extends EventEmitter {
 		}
 	}
 
-	async _attemptEmailCodeAuth() {
+	/**
+	 * @returns {boolean} - true if code submitted successfully, false if code wasn't valid or no code available
+	 */
+	async _attemptEmailCodeAuth(): Promise<boolean> {
 		if (this._steamGuardCode) {
 			try {
 				await this.submitSteamGuardCode(this._steamGuardCode);
-				return;
+				return true;
 			} catch (ex) {
 				if (ex.eresult != EResult.InvalidLoginAuthCode) {
 					// this is some kind of important error
-					this.emit('error', ex);
+					throw ex;
 				}
 			}
 		}
@@ -194,37 +238,35 @@ export default class LoginSession extends EventEmitter {
 					...this._startSessionResponse
 				});
 			} catch (ex) {
-				this.emit('error', ex);
-				return;
+				throw ex;
 			}
 
 			if (result.result == EResult.OK) {
 				// Machine auth succeeded
-				this._doPoll();
-				return;
+				setImmediate(() => this._doPoll());
+				return true;
 			}
 		}
 
 		// An email was sent
-		let confirmation = this._startSessionResponse.allowedConfirmations.find(c => c.type == EAuthSessionGuardType.EmailCode);
-		this.emit('authSessionGuardRequired', EAuthSessionGuardType.EmailCode, {domain: confirmation.message});
+		return false;
 	}
 
-	async _attemptTotpCodeAuth() {
+	async _attemptTotpCodeAuth(): Promise<boolean> {
 		if (this._steamGuardCode) {
 			try {
 				await this.submitSteamGuardCode(this._steamGuardCode);
-				return; // submitting code succeeded
+				return true; // submitting code succeeded
 			} catch (ex) {
 				if (ex.eresult != EResult.TwoFactorCodeMismatch) {
 					// this is some kind of important error
-					this.emit('error', ex);
+					throw ex;
 				}
 			}
 		}
 
 		// If we got here, then we need the user to supply a code
-		this.emit('authSessionGuardRequired', EAuthSessionGuardType.DeviceCode);
+		return false;
 	}
 
 	async submitSteamGuardCode(authCode: string) {
