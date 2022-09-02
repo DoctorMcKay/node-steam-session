@@ -268,7 +268,7 @@ Polling starts when any of these conditions are met:
 - A login session is successfully started with credentials, then you supplied a valid code to [`submitSteamGuardCode`](#submitsteamguardcodeauthcode)*
 - A login session is successfully started, and `DeviceConfirmation` or `EmailConfirmation` are among the valid guards
 
-* = in these cases, we expect to only have to poll once before login succeeds.
+\* = in these cases, we expect to only have to poll once before login succeeds.
 
 After this event is emitted, if your [`loginTimeout`](#logintimeout) elapses and the login attempt has not yet succeeded,
 [`timeout`](#timeout) is emitted and the login attempt is abandoned. You would then need to start a new login attempt
