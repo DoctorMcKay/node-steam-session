@@ -22,6 +22,7 @@ module.exports = {
 		'@typescript-eslint/no-explicit-any': 'off',
 		'no-case-declarations': 'off',
 		'@typescript-eslint/ban-ts-comment': 'off',
+		'no-async-promise-executor': 'off',
 
 		// Use tabs for indentation and require 'case' in switch to be indented 1 level (default 0)
 		indent: ['error', 'tab', {SwitchCase: 1}],

@@ -12,7 +12,7 @@ import {
 	StartSessionResponse,
 	StartSessionResponseValidAction
 } from './interfaces-external';
-import {CheckMachineAuthResponse, StartAuthSessionWithCredentialsResponse} from './interfaces-internal';
+import {StartAuthSessionWithCredentialsResponse} from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
@@ -65,9 +65,8 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	get accountName(): string { return this._accountName; }
-	get accessToken(): string { return this._accessToken; }
-	get refreshToken(): string { return this._refreshToken; }
 
+	get accessToken(): string { return this._accessToken; }
 	set accessToken(token: string) {
 		if (!token) {
 			this._accessToken = token;
@@ -95,6 +94,7 @@ export default class LoginSession extends EventEmitter {
 		this._accessToken = token;
 	}
 
+	get refreshToken(): string { return this._refreshToken; }
 	set refreshToken(token: string) {
 		if (!token) {
 			this._refreshToken = token;
@@ -306,15 +306,10 @@ export default class LoginSession extends EventEmitter {
 
 		// Can we use a machine auth token?
 		if (this._startSessionResponse.allowedConfirmations.some(c => c.type == EAuthSessionGuardType.MachineToken)) {
-			let result:CheckMachineAuthResponse;
-			try {
-				result = await this._handler.checkMachineAuthOrSendCodeEmail({
-					machineAuthToken: this._steamGuardMachineToken,
-					...this._startSessionResponse
-				});
-			} catch (ex) {
-				throw ex;
-			}
+			let result = await this._handler.checkMachineAuthOrSendCodeEmail({
+				machineAuthToken: this._steamGuardMachineToken,
+				...this._startSessionResponse
+			});
 
 			if (result.result == EResult.OK) {
 				// Machine auth succeeded
@@ -444,7 +439,7 @@ function promiseAny(promises): Promise<any> {
 				if (pendingPromises == 0) {
 					reject(rejections[0]);
 				}
-			})
+			});
 		});
 	});
 }

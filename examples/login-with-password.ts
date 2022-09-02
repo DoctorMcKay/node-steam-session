@@ -51,7 +51,7 @@ async function main() {
 					console.log('You may confirm this login by responding to the prompt in your Steam mobile app');
 					break;
 			}
-		}
+		};
 
 		nonPromptingGuards.forEach(printGuard);
 		promptingGuards.forEach(printGuard);
