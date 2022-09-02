@@ -22,7 +22,7 @@ import Timeout = NodeJS.Timeout;
 export default class LoginSession extends EventEmitter {
 	loginTimeout: number;
 
-	accountName?: string; // we don't validate this at all
+	_accountName?: string;
 	_accessToken?: string;
 	_refreshToken?: string;
 
@@ -64,6 +64,7 @@ export default class LoginSession extends EventEmitter {
 		}
 	}
 
+	get accountName(): string { return this._accountName; }
 	get accessToken(): string { return this._accessToken; }
 	get refreshToken(): string { return this._refreshToken; }
 
@@ -141,9 +142,17 @@ export default class LoginSession extends EventEmitter {
 		if (!this._startSessionResponse) {
 			throw new Error('Login session has not been started yet');
 		}
+
+		if (this._pollingCanceled) {
+			throw new Error('Login attempt has been canceled');
+		}
 	}
 
 	async startWithCredentials(details: StartLoginSessionWithCredentialsDetails): Promise<StartSessionResponse> {
+		if (this._startSessionResponse) {
+			throw new Error('A session has already been started on this LoginSession object. Create a new LoginSession to start a new session.');
+		}
+
 		this._hadRemoteInteraction = false;
 		this._steamGuardCode = details.steamGuardCode;
 		this._steamGuardMachineToken = details.steamGuardMachineToken;
@@ -258,6 +267,7 @@ export default class LoginSession extends EventEmitter {
 			this.emit('debug', 'poll response', pollResponse);
 		} catch (ex) {
 			this.emit('error', ex);
+			this.cancelLoginAttempt();
 			return;
 		}
 
@@ -269,7 +279,7 @@ export default class LoginSession extends EventEmitter {
 		}
 
 		if (pollResponse.accessToken) {
-			this.accountName = pollResponse.accountName;
+			this._accountName = pollResponse.accountName;
 			this.accessToken = pollResponse.accessToken;
 			this.refreshToken = pollResponse.refreshToken;
 			this.emit('authenticated');
@@ -334,7 +344,7 @@ export default class LoginSession extends EventEmitter {
 		return false;
 	}
 
-	async submitSteamGuardCode(authCode: string) {
+	async submitSteamGuardCode(authCode: string): Promise<void> {
 		this._verifyStarted();
 
 		this.emit('debug', 'submitting steam guard code', authCode);

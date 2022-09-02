@@ -57,7 +57,7 @@ async function main() {
 		promptingGuards.forEach(printGuard);
 	}
 
-	session.on('authenticated', () => {
+	session.on('authenticated', async () => {
 		abortPrompt();
 
 		console.log('Authenticated successfully! Printing your tokens now...');
@@ -65,12 +65,22 @@ async function main() {
 		console.log(`Account name: ${session.accountName}`);
 		console.log(`Access token: ${session.accessToken}`);
 		console.log(`Refresh token: ${session.refreshToken}`);
+
+		let webCookies = await session.getWebCookies();
+		console.log('Web session cookies:');
+		console.log(webCookies);
 	});
 
 	session.on('timeout', () => {
 		abortPrompt();
 
 		console.log('This login attempt has timed out.');
+	});
+
+	session.on('error', (err) => {
+		abortPrompt();
+
+		console.log(`ERROR: This login attempt has failed! ${err.message}`);
 	});
 }
 
