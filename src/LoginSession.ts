@@ -1,4 +1,6 @@
+import axios from 'axios';
 import EventEmitter from 'events';
+import {randomBytes} from 'crypto';
 import SteamID from 'steamid';
 
 import AuthenticationClient from './AuthenticationClient';
@@ -14,14 +16,15 @@ import {CheckMachineAuthResponse, StartAuthSessionWithCredentialsResponse} from 
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
+import {API_HEADERS, decodeJwt, eresultError} from './helpers';
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
 	loginTimeout: number;
 
-	accountName?: string;
-	accessToken?: string;
-	refreshToken?: string;
+	accountName?: string; // we don't validate this at all
+	_accessToken?: string;
+	_refreshToken?: string;
 
 	_platformType: EAuthTokenPlatformType;
 	_handler: AuthenticationClient;
@@ -49,11 +52,73 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	get steamID(): SteamID {
-		if (!this._startSessionResponse) {
+		// There's a few places we could get a steamid from
+		if (this._startSessionResponse) {
+			return new SteamID(this._startSessionResponse.steamId);
+		} else if (this.accessToken || this.refreshToken) {
+			let token = this.accessToken || this.refreshToken;
+			let decodedToken = decodeJwt(token);
+			return new SteamID(decodedToken.sub);
+		} else {
 			return null;
 		}
+	}
 
-		return new SteamID(this._startSessionResponse.steamId);
+	get accessToken(): string { return this._accessToken; }
+	get refreshToken(): string { return this._refreshToken; }
+
+	set accessToken(token: string) {
+		if (!token) {
+			this._accessToken = token;
+			return;
+		}
+
+		let decoded = decodeJwt(token);
+
+		try { new SteamID(decoded.sub); } catch {
+			throw new Error('Not a valid Steam access token');
+		}
+
+		if (this._startSessionResponse && this._startSessionResponse.steamId && decoded.sub != this._startSessionResponse.steamId) {
+			throw new Error('Token is for a different account. To work with a different account, create a new LoginSession.');
+		}
+
+		if (this._refreshToken) {
+			let decodedRefreshToken = decodeJwt(this._refreshToken);
+			if (decodedRefreshToken.sub != decoded.sub) {
+				throw new Error('This access token belongs to a different account from the set refresh token.');
+			}
+		}
+
+		// Everything checks out
+		this._accessToken = token;
+	}
+
+	set refreshToken(token: string) {
+		if (!token) {
+			this._refreshToken = token;
+			return;
+		}
+
+		let decoded = decodeJwt(token);
+
+		try { new SteamID(decoded.sub); } catch {
+			throw new Error('Not a valid Steam access token');
+		}
+
+		if (this._startSessionResponse && this._startSessionResponse.steamId && decoded.sub != this._startSessionResponse.steamId) {
+			throw new Error('Token is for a different account. To work with a different account, create a new LoginSession.');
+		}
+
+		if (this._accessToken) {
+			let decodedAccessToken = decodeJwt(this._accessToken);
+			if (decodedAccessToken.sub != decoded.sub) {
+				throw new Error('This refresh token belongs to a different account from the set access token.');
+			}
+		}
+
+		// Everything checks out
+		this._refreshToken = token;
 	}
 
 	get _defaultWebsiteId() {
@@ -299,4 +364,77 @@ export default class LoginSession extends EventEmitter {
 
 		return false;
 	}
+
+	async getWebCookies(): Promise<string[]> {
+		if (!this.refreshToken) {
+			throw new Error('A refresh token is required to get web cookies');
+		}
+
+		let finalizeResponse = await axios({
+			method: 'POST',
+			url: 'https://login.steampowered.com/jwt/finalizelogin',
+			headers: {'content-type': 'multipart/form-data', ...API_HEADERS},
+			data: {
+				nonce: this.refreshToken,
+				sessionid: randomBytes(12).toString('hex'),
+				redir: 'https://steamcommunity.com/login/home/?goto='
+			}
+		});
+
+		if (finalizeResponse.data && finalizeResponse.data.error) {
+			throw eresultError(finalizeResponse.data.error);
+		}
+
+		if (!finalizeResponse.data || !finalizeResponse.data.transfer_info) {
+			throw new Error('Malformed login response');
+		}
+
+		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
+		// successful transfer (hence the usage of promsieAny), but we execute them all for robustness in case one fails.
+		// As long as one succeeds, we're good.
+		let transfers = finalizeResponse.data.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
+			let result = await axios({
+				method: 'POST',
+				url,
+				headers: {'content-type': 'multipart/form-data'},
+				data: {steamID: this.steamID.getSteamID64(), ...params}
+			});
+			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
+				return reject(new Error('No Set-Cookie header in result'));
+			}
+
+			if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
+				return reject(new Error('No steamLoginSecure cookie in result'));
+			}
+
+			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
+		}));
+
+		return await promiseAny(transfers);
+	}
+}
+
+/**
+ * @param {Promise[]} promises
+ * @returns {Promise}
+ */
+function promiseAny(promises): Promise<any> {
+	// for node <15 compat
+	return new Promise((resolve, reject) => {
+		let pendingPromises = promises.length;
+		let rejections = [];
+		promises.forEach((promise) => {
+			promise.then((result) => {
+				pendingPromises--;
+				resolve(result);
+			}).catch((err) => {
+				pendingPromises--;
+				rejections.push(err);
+
+				if (pendingPromises == 0) {
+					reject(rejections[0]);
+				}
+			})
+		});
+	});
 }

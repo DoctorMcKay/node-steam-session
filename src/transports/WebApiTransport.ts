@@ -3,17 +3,12 @@ import QueryString from 'querystring';
 
 import ITransport, {ApiRequest, ApiResponse} from './ITransport';
 import EResult from '../enums-steam/EResult';
+import {API_HEADERS} from '../helpers';
 
 // Assume everything is a POST request unless it's specifically listed as a GET request
 const GET_REQUESTS = [
 	'IAuthenticationService/GetPasswordRSAPublicKey/v1'
 ];
-
-const API_HEADERS = {
-	origin: 'https://steamcommunity.com',
-	referer: 'https://steamcommunity.com/',
-	accept: 'application/json, text/plain, */*'
-};
 
 export default class WebApiTransport implements ITransport {
 	async sendRequest(request: ApiRequest): Promise<ApiResponse> {

@@ -3,7 +3,7 @@ import {hex2b64, Key as RSAKey} from 'node-bignumber';
 import Protos from './protobuf-generated/load';
 import ITransport, {ApiResponse} from './transports/ITransport';
 import EResult from './enums-steam/EResult';
-import {eresultError} from './helpers';
+import {API_HEADERS, eresultError} from './helpers';
 import {
 	CAuthentication_BeginAuthSessionViaCredentials_Request,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
@@ -18,12 +18,6 @@ import {
 } from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
-
-const API_HEADERS = {
-	origin: 'https://steamcommunity.com',
-	referer: 'https://steamcommunity.com/',
-	accept: 'application/json, text/plain, */*'
-};
 
 interface RequestDefinition {
 	apiInterface: string;
