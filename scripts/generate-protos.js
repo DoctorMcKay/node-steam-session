@@ -51,7 +51,7 @@ FS.readdirSync(Path.join(__dirname, '..', 'protobufs')).forEach((filename) => {
 
 	let protoDefinition = JSON.parse(ChildProcess.execSync(cmdLine).toString('utf8'));
 	loader += `const ${safeFilename}:any = ${JSON.stringify(protoDefinition)};\n`;
-	loaderMerges += `mergeObjects(Schema, Protobuf.Root.fromJSON(${safeFilename}));\n`;
+	loaderMerges += `Object.assign(Schema, Protobuf.Root.fromJSON(${safeFilename}));\n`;
 
 	if (protoDefinition.nested) {
 		FS.writeSync(typesFile, `///////////////////////////////////////////////\n// ${filenameWithoutExtension}.proto\n///////////////////////////////////////////////\n\n`);
@@ -63,16 +63,7 @@ FS.closeSync(typesFile);
 
 console.log("Generating load.ts");
 loader += `\n${loaderMerges}\nexport default Schema;\n`;
-loader += `\n${mergeObjects.toString()}\n`;
 FS.writeFileSync(GENERATED_DIR + '/load.ts', loader);
-
-function mergeObjects(destinationObject, sourceObject) {
-	for (let i in sourceObject) {
-		if (sourceObject.hasOwnProperty(i)) {
-			destinationObject[i] = sourceObject[i];
-		}
-	}
-}
 
 function writeTypedef(obj, namespace = '.') {
 	let output = '';
