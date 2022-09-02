@@ -1,14 +1,8 @@
 import EResult from './enums-steam/EResult';
 
 export function eresultError(result:EResult, errorMessage?:string): Error {
-	let resultMsg:string = result.toString();
-
-	for (let i in EResult) {
-		if (EResult[i] == result.toString()) {
-			resultMsg = i;
-			break;
-		}
-	}
+	let resultMsg:string = result.toString(); // this is the numeric value, as a string
+	resultMsg = EResult[resultMsg] || resultMsg; // this is now the string representation of the EResult value
 
 	let err = new Error(errorMessage || resultMsg);
 	// @ts-ignore
