@@ -18,6 +18,7 @@ Logging into Steam is a two-step process.
 
 1. You start a login session either using your account credentials (username and password) or by generating a QR code
 	- Use [`startWithCredentials`](#startwithcredentialsdetails) to start a login session using your account credentials
+    - Use [`startWithQR`](#startwithqrdetails) to start a QR login session
 2. Assuming any credentials you provided when you started the session were correct, Steam replies with a list of login guards
 	- See [EAuthSessionGuardType](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/enums-steam/EAuthSessionGuardType.ts)
 	- If your account doesn't have Steam Guard enabled or you provided a valid code upfront, there may be 0 guards required
@@ -117,7 +118,8 @@ The `LoginSession` class is the primary way to interact with steam-session.
 
 **Read-only.** A [`SteamID`](https://www.npmjs.com/package/steamid) instance containing the SteamID for the
 currently-authenticated account. Populated immediately after [`startWithCredentials`](#startwithcredentialsdetails)
-resolves, or immediately after [`accessToken`](#accesstoken) or [`refreshToken`](#refreshtoken) are set.
+resolves, or immediately after [`accessToken`](#accesstoken) or [`refreshToken`](#refreshtoken) are set (meaning that
+this is always populated when [`authenticated`](#authenticated) fires).
 
 ### loginTimeout
 
@@ -219,6 +221,30 @@ available at the same time.
 
 When this method resolves, [`steamID`](#steamid) will be populated.
 
+### startWithQR([details])
+- `details` - Optional. An object with these properties:
+	- `deviceFriendlyName` - Optional. A name to identify this device. Defaults to the Chrome user-agent.
+
+Starts a new QR login attempt. Returns a Promise.
+
+On failure, the Promise will be rejected with its message being equal to the string representation of an [EResult](#eresult)
+value. There will also be an `eresult` property on the Error object equal to the numeric representation of the relevant
+EResult value. Realistically, failures should never happen unless Steam is having problems or you're having network issues.
+
+On success, the Promise will be resolved with an object containing these properties:
+
+- `actionRequired` - Always true.
+- `validActions` - Same as `validActions` for [`startWithCredentials`](#startwithcredentialsdetails). `DeviceConfirmation`
+  should always be present. `DeviceCode` has also been observed, even though at this point Steam doesn't even know what
+  account you intend to log into.
+- `qrChallengeUrl` - A string containing the URL that should be encoded into a QR code and then scanned with the Steam
+  mobile app.
+
+[`steamID`](#steamid) will not be populated when this method resolves, since at this point we don't know which account
+we're going to log into. It will be populated after you successfully [authenticate](#authenticated).
+
+Immediately after this resolves, LoginSession will start [polling](#polling) to determine when authentication has succeeded.
+
 ### submitSteamGuardCode(authCode)
 - `authCode` - Your Steam Guard code, as a string
 
@@ -267,6 +293,7 @@ Polling starts when any of these conditions are met:
 - A login session is successfully started with credentials, you're using email Steam Guard, and you supplied a valid `steamGuardMachineToken`*
 - A login session is successfully started with credentials, then you supplied a valid code to [`submitSteamGuardCode`](#submitsteamguardcodeauthcode)*
 - A login session is successfully started, and `DeviceConfirmation` or `EmailConfirmation` are among the valid guards
+	- This case covers [QR logins](#startwithqrdetails), since a QR login is a device confirmation under the hood
 
 \* = in these cases, we expect to only have to poll once before login succeeds.
 
@@ -283,7 +310,8 @@ called internally.
 ### remoteInteraction
 
 This event is emitted when Steam reports a "remote interaction" via [polling](#polling). This is observed to happen
-when the approval prompt is viewed in the Steam mobile app for the `DeviceConfirmation` guard.
+when the approval prompt is viewed in the Steam mobile app for the `DeviceConfirmation` guard. For a [QR login](#startwithqrdetails),
+this would be after you scan the code, but before you tap approve or deny.
 
 ### authenticated
 

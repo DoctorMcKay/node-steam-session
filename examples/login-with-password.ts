@@ -1,6 +1,6 @@
 import {createInterface} from 'readline';
 import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from '../src'; // use the following line if you installed the module from npm
-//import {EAuthSessionGuardType, LoginSession} from 'steam-session';
+//import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from 'steam-session';
 
 // Create a variable where we can store an abort function to cancel stdin input
 let g_AbortPromptFunc;

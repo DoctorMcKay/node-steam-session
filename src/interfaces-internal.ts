@@ -3,23 +3,34 @@ import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 
-export interface StartAuthSessionWithCredentialsRequest {
+export interface StartAuthSessionRequest {
 	deviceFriendlyName?: string;
-	accountName: string;
-	encryptedPassword: string;
-	keyTimestamp: string;
-	persistence: ESessionPersistence;
 	platformType: EAuthTokenPlatformType;
-	websiteId: string;
 }
 
-export interface StartAuthSessionWithCredentialsResponse {
+export interface StartAuthSessionResponse {
 	clientId: string;
 	requestId: Buffer;
 	pollInterval: number;
 	allowedConfirmations: AllowedConfirmation[],
+}
+
+export interface StartAuthSessionWithCredentialsRequest extends StartAuthSessionRequest {
+	accountName: string;
+	encryptedPassword: string;
+	keyTimestamp: string;
+	persistence: ESessionPersistence;
+	websiteId: string;
+}
+
+export interface StartAuthSessionWithCredentialsResponse extends StartAuthSessionResponse {
 	steamId: string;
 	weakToken: string;
+}
+
+export interface StartAuthSessionWithQrResponse extends StartAuthSessionResponse {
+	challengeUrl: string;
+	version: number;
 }
 
 export interface AllowedConfirmation {

@@ -11,9 +11,16 @@ export interface StartLoginSessionWithCredentialsDetails {
 	steamGuardCode?: string;
 }
 
+export interface StartLoginSessionWithQRDetails {
+	deviceFriendlyName?: string;
+}
+
 export interface StartSessionResponse {
 	actionRequired: boolean;
 	validActions?: StartSessionResponseValidAction[];
+
+	// The following is for QR logins
+	qrChallengeUrl?: string;
 }
 
 export interface StartSessionResponseValidAction {

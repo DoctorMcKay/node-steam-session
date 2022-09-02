@@ -8,11 +8,14 @@ import ITransport from './transports/ITransport';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import WebApiTransport from './transports/WebApiTransport';
 import {
-	StartLoginSessionWithCredentialsDetails,
+	StartLoginSessionWithCredentialsDetails, StartLoginSessionWithQRDetails,
 	StartSessionResponse,
 	StartSessionResponseValidAction
 } from './interfaces-external';
-import {StartAuthSessionWithCredentialsResponse} from './interfaces-internal';
+import {
+	StartAuthSessionResponse,
+	StartAuthSessionWithCredentialsResponse, StartAuthSessionWithQrResponse
+} from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
@@ -31,7 +34,7 @@ export default class LoginSession extends EventEmitter {
 
 	_steamGuardCode?: string;
 	_steamGuardMachineToken?: string;
-	_startSessionResponse?: StartAuthSessionWithCredentialsResponse;
+	_startSessionResponse?: StartAuthSessionResponse;
 	_hadRemoteInteraction?: boolean;
 
 	_pollingStartedTime?: number;
@@ -53,8 +56,8 @@ export default class LoginSession extends EventEmitter {
 
 	get steamID(): SteamID {
 		// There's a few places we could get a steamid from
-		if (this._startSessionResponse) {
-			return new SteamID(this._startSessionResponse.steamId);
+		if (this._startSessionResponse && (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId) {
+			return new SteamID((this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId);
 		} else if (this.accessToken || this.refreshToken) {
 			let token = this.accessToken || this.refreshToken;
 			let decodedToken = decodeJwt(token);
@@ -79,7 +82,11 @@ export default class LoginSession extends EventEmitter {
 			throw new Error('Not a valid Steam access token');
 		}
 
-		if (this._startSessionResponse && this._startSessionResponse.steamId && decoded.sub != this._startSessionResponse.steamId) {
+		if (
+			this._startSessionResponse
+			&& (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
+			&& decoded.sub != (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
+		) {
 			throw new Error('Token is for a different account. To work with a different account, create a new LoginSession.');
 		}
 
@@ -107,7 +114,11 @@ export default class LoginSession extends EventEmitter {
 			throw new Error('Not a valid Steam access token');
 		}
 
-		if (this._startSessionResponse && this._startSessionResponse.steamId && decoded.sub != this._startSessionResponse.steamId) {
+		if (
+			this._startSessionResponse
+			&& (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
+			&& decoded.sub != (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
+		) {
 			throw new Error('Token is for a different account. To work with a different account, create a new LoginSession.');
 		}
 
@@ -138,13 +149,17 @@ export default class LoginSession extends EventEmitter {
 		}
 	}
 
-	_verifyStarted() {
+	_verifyStarted(mustHaveSteamId = false) {
 		if (!this._startSessionResponse) {
 			throw new Error('Login session has not been started yet');
 		}
 
 		if (this._pollingCanceled) {
 			throw new Error('Login attempt has been canceled');
+		}
+
+		if (mustHaveSteamId && !this.steamID) {
+			throw new Error('Cannot use this method with this login scheme');
 		}
 	}
 
@@ -170,7 +185,25 @@ export default class LoginSession extends EventEmitter {
 
 		this.emit('debug', 'start session response', this._startSessionResponse);
 
-		// Use setImmediate so that the promise is resolved before we potentially emit a session
+		return await this._processStartSessionResponse();
+	}
+
+	async startWithQR(details?: StartLoginSessionWithQRDetails): Promise<StartSessionResponse> {
+		details = details || {};
+
+		if (this._startSessionResponse) {
+			throw new Error('A session has already been started on this LoginSession object. Create a new LoginSession to start a new session.');
+		}
+
+		this._hadRemoteInteraction = false;
+
+		this._startSessionResponse = await this._handler.startSessionWithQR({
+			deviceFriendlyName: details.deviceFriendlyName,
+			platformType: this._platformType
+		});
+
+		this.emit('debug', 'start qr session response', this._startSessionResponse);
+
 		return await this._processStartSessionResponse();
 	}
 
@@ -235,10 +268,17 @@ export default class LoginSession extends EventEmitter {
 			throw new Error('Login requires action, but we can\'t tell what kind of action is required');
 		}
 
-		return {
+		let response:StartSessionResponse = {
 			actionRequired: true,
 			validActions
 		};
+
+		if ((this._startSessionResponse as StartAuthSessionWithQrResponse).challengeUrl) {
+			let startSessionResponse:StartAuthSessionWithQrResponse = this._startSessionResponse as StartAuthSessionWithQrResponse;
+			response.qrChallengeUrl = startSessionResponse.challengeUrl;
+		}
+
+		return response;
 	}
 
 	async _doPoll() {
@@ -308,7 +348,7 @@ export default class LoginSession extends EventEmitter {
 		if (this._startSessionResponse.allowedConfirmations.some(c => c.type == EAuthSessionGuardType.MachineToken)) {
 			let result = await this._handler.checkMachineAuthOrSendCodeEmail({
 				machineAuthToken: this._steamGuardMachineToken,
-				...this._startSessionResponse
+				...(this._startSessionResponse as StartAuthSessionWithCredentialsResponse)
 			});
 
 			if (result.result == EResult.OK) {
@@ -340,7 +380,7 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	async submitSteamGuardCode(authCode: string): Promise<void> {
-		this._verifyStarted();
+		this._verifyStarted(true);
 
 		this.emit('debug', 'submitting steam guard code', authCode);
 
@@ -351,7 +391,7 @@ export default class LoginSession extends EventEmitter {
 		}
 
 		await this._handler.submitSteamGuardCode({
-			...this._startSessionResponse,
+			...(this._startSessionResponse as StartAuthSessionWithCredentialsResponse),
 			authCode,
 			authCodeType: needsEmailCode ? EAuthSessionGuardType.EmailCode : EAuthSessionGuardType.DeviceCode
 		});

@@ -7,13 +7,21 @@ import {API_HEADERS, eresultError} from './helpers';
 import {
 	CAuthentication_BeginAuthSessionViaCredentials_Request,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
-	CAuthentication_GetPasswordRSAPublicKey_Response, CAuthentication_PollAuthSessionStatus_Request,
+	CAuthentication_BeginAuthSessionViaQR_Request,
+	CAuthentication_BeginAuthSessionViaQR_Response,
+	CAuthentication_GetPasswordRSAPublicKey_Response,
+	CAuthentication_PollAuthSessionStatus_Request,
 	CAuthentication_PollAuthSessionStatus_Response,
 	CAuthentication_UpdateAuthSessionWithSteamGuardCode_Request
 } from './protobuf-generated/types';
 import {
-	CheckMachineAuthRequest, CheckMachineAuthResponse, PollLoginStatusRequest, PollLoginStatusResponse,
-	StartAuthSessionWithCredentialsRequest, StartAuthSessionWithCredentialsResponse,
+	CheckMachineAuthRequest,
+	CheckMachineAuthResponse,
+	PollLoginStatusRequest,
+	PollLoginStatusResponse,
+	StartAuthSessionRequest,
+	StartAuthSessionWithCredentialsRequest,
+	StartAuthSessionWithCredentialsResponse, StartAuthSessionWithQrResponse,
 	SubmitSteamGuardCodeRequest
 } from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
@@ -81,6 +89,30 @@ export default class AuthenticationClient {
 			allowedConfirmations: result.allowed_confirmations.map(c => ({type: c.confirmation_type, message: c.associated_message})),
 			steamId: result.steamid,
 			weakToken: result.weak_token
+		};
+	}
+
+	async startSessionWithQR(details: StartAuthSessionRequest): Promise<StartAuthSessionWithQrResponse> {
+		let data:CAuthentication_BeginAuthSessionViaQR_Request = {
+			// TODO: use appropriate user-agent based on platform type
+			device_friendly_name: details.deviceFriendlyName || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36',
+			platform_type: details.platformType
+		};
+
+		let result:CAuthentication_BeginAuthSessionViaQR_Response = await this.sendRequest({
+			apiInterface: 'Authentication',
+			apiMethod: 'BeginAuthSessionViaQR',
+			apiVersion: 1,
+			data
+		});
+
+		return {
+			clientId: result.client_id,
+			requestId: result.request_id,
+			pollInterval: result.interval,
+			allowedConfirmations: result.allowed_confirmations.map(c => ({type: c.confirmation_type, message: c.associated_message})),
+			challengeUrl: result.challenge_url,
+			version: result.version
 		};
 	}
 
