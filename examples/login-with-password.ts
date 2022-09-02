@@ -1,19 +1,26 @@
 import {createInterface} from 'readline';
-import {EAuthSessionGuardType, LoginSession} from '../src';
+import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from '../src'; // use the following line if you installed the module from npm
+//import {EAuthSessionGuardType, LoginSession} from 'steam-session';
 
+// Create a variable where we can store an abort function to cancel stdin input
 let g_AbortPromptFunc;
 
+// We need to wrap everything in an async function since node <14.8 cannot use await in the top-level context
 main();
 async function main() {
+	// Prompt for credentials from the console
 	let accountName = await promptAsync('Username: ');
 	let password = await promptAsync('Password: ', true);
 
-	let session = new LoginSession();
+	// Create our LoginSession and start a login session using our credentials. This session will be for a web login.
+	let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
 	let startResult = await session.startWithCredentials({
 		accountName,
 		password
 	});
 
+	// actionRequired will be true if we need to do something to finish logging in, e.g. supply a code or approve a
+	// prompt on our phone.
 	if (startResult.actionRequired) {
 		console.log('Action is required from you to complete this login');
 
@@ -66,6 +73,7 @@ async function main() {
 		console.log(`Access token: ${session.accessToken}`);
 		console.log(`Refresh token: ${session.refreshToken}`);
 
+		// We can also get web cookies now that we've negotiated a session
 		let webCookies = await session.getWebCookies();
 		console.log('Web session cookies:');
 		console.log(webCookies);
@@ -80,9 +88,13 @@ async function main() {
 	session.on('error', (err) => {
 		abortPrompt();
 
+		// This should ordinarily not happen. This only happens in case there's some kind of unexpected error while
+		// polling, e.g. the network connection goes down or Steam chokes on something.
 		console.log(`ERROR: This login attempt has failed! ${err.message}`);
 	});
 }
+
+// Nothing interesting below here, just code for prompting for input from the console.
 
 function promptAsync(question, sensitiveInput = false): Promise<string> {
 	return new Promise((resolve) => {
