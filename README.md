@@ -399,7 +399,7 @@ import {LoginApprover} from 'steam-session';
 ```
 
 This class can be used to approve a login attempt that was started with a QR code.
-[See the approve-qr example.](https://github.com/DoctorMcKay/node-steam-session/blob/master/examples/login-with-qr.ts)
+[See the approve-qr example.](https://github.com/DoctorMcKay/node-steam-session/blob/master/examples/approve-qr.ts)
 
 ## Properties
 
