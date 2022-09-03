@@ -1,4 +1,5 @@
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
+import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EResult from './enums-steam/EResult';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
@@ -9,12 +10,15 @@ import LoginSession from './LoginSession';
 
 export {
 	EAuthSessionGuardType,
+	EAuthSessionSecurityHistory,
 	EAuthTokenPlatformType,
 	EResult,
 	ESessionPersistence,
+
 	ITransport,
 	ApiRequest,
 	ApiResponse,
+
 	LoginApprover,
 	LoginSession
 };
