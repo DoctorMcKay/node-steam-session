@@ -142,7 +142,7 @@ export default class LoginSession extends EventEmitter {
 				return 'Community';
 
 			case EAuthTokenPlatformType.MobileApp:
-				return 'MobileApp'; // TODO confirm this
+				return 'Mobile';
 
 			default:
 				return 'Community';
