@@ -24,7 +24,7 @@ Logging into Steam is a two-step process.
 	- If your account doesn't have Steam Guard enabled or you provided a valid code upfront, there may be 0 guards required
     - Only one guard must be satisfied to complete the login. For example, you might be given a choice of providing a TOTP code or confirming the login in your Steam mobile app
 3. When you satisfy any guards, Steam sends back an access token and a refresh token. These can be used to:
-    - Log on with node-steam-user
+    - [Log on with node-steam-user](https://github.com/DoctorMcKay/node-steam-user#logondetails)
     - [Obtain web session cookies](#getwebcookies)
     - Authenticate with WebAPI methods used by the mobile app
 
@@ -37,9 +37,19 @@ See the [examples directory on GitHub](https://github.com/DoctorMcKay/node-steam
 When using CommonJS (`require()`), steam-session exports an object. When using ES6 modules (`import`), steam-session does
 not offer a default export and you will need to import specific things.
 
-The majority of steam-session consumers will only care about the [`LoginSession`](#loginsession) class and enums.
+The majority of steam-session consumers will only care about enums, and the [`LoginSession`](#loginsession)
+and potentially [`LoginApprover`](#loginapprover) classes.
 
 ## Enums
+
+### EAuthSessionSecurityHistory
+
+```js
+const {EAuthSessionSecurityHistory} = require('steam-session');
+import {EAuthSessionSecurityHistory} from 'steam-session';
+```
+
+[View on GitHub](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/enums-steam/EAuthSessionSecurityHistory.ts)
 
 ### EAuthSessionGuardType
 
@@ -162,9 +172,9 @@ Setting this property will throw an Error if:
 
 ## Methods
 
-### Constructor([platformType][, transport])
+### Constructor(platformType[, transport])
 - `platformType` - A value from [`EAuthTokenPlatformType`](#eauthtokenplatformtype). You should set this to the
-	appropriate platform type for your desired usage. If omitted, defaults to `WebBrowser`.
+	appropriate platform type for your desired usage.
 - `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
 	If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
 
@@ -274,6 +284,11 @@ will fail with EResult value TwoFactorCodeMismatch (88).
 On success, the Promise will be resolved with no value. In this case, you should expect for [`authenticated`](#authenticated)
 to be emitted shortly.
 
+### forcePoll()
+
+Forces an immediate polling attempt. This will throw an `Error` if you call it before the [`polling`](#polling) event is
+emitted, after [`authenticated`](#authenticated) is emitted, or after you call [`cancelLoginAttempt`](#cancelloginattempt).
+
 ### cancelLoginAttempt()
 
 Cancels [polling](#polling) for an ongoing login attempt. Once canceled, you should no longer interact with this
@@ -334,3 +349,90 @@ This event is emitted if we encounter an error while [polling](#polling). The fi
 an Error object. If this happens, the login attempt has failed and will need to be retried.
 
 Node.js will crash if this event is emitted and not handled.
+
+# LoginApprover
+
+```js
+const {LoginApprover} = require('steam-session');
+import {LoginApprover} from 'steam-session';
+```
+
+This class can be used to approve a login attempt that was started with a QR code.
+[See the approve-qr example.](https://github.com/DoctorMcKay/node-steam-session/blob/master/examples/login-with-qr.ts)
+
+## Properties
+
+### steamID
+
+**Read-only.** A [`SteamID`](https://www.npmjs.com/package/steamid) instance containing the SteamID for the
+account to which the provided [`accessToken`](#accesstoken-1) belongs. Populated immediately after [`accessToken`](#accesstoken-1)
+is set.
+
+### accessToken
+
+A `string` containing your access token. This is automatically set by the constructor, but you can also manually assign
+it if you need to set a new access token.
+
+An Error will be thrown when you set this property if you set it to a value that isn't a well-formed JWT, if you set it
+to a refresh token rather than an access token, or if you set it to an access token that was not generated using
+`EAuthTokenPlatformType.MobileApp`.
+
+### sharedSecret
+
+A `string` or `Buffer` containing your shared secret. This is automatically set by the constructor, but you can also
+manually assign it if you need to set a new shared secret.
+
+If this is a `string`, it must be either hex- or base64-encoded.
+
+## Methods
+
+### Constructor(accessToken, sharedSecret[, transport])
+- `accessToken` - A `string` containing a valid access token for the account you want to approve logins for. This
+  access token (**not refresh token**) must have been created using the `MobileApp` platform type.
+- `sharedSecret` - A `string` or `Buffer` containing your account's TOTP shared secret. If this is a string, it must be
+  hex- or base64-encoded.
+- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
+  If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+
+Constructs a new `LoginApprover` instance. Example usage:
+
+```js
+import {LoginApprover} from 'steam-session';
+
+let approver = new LoginApprover('eyAid...', 'oTVMfZJ9uHXo3m9MwTD9IOEWQaw=');
+```
+
+An Error will be thrown if your `accessToken` isn't a well-formed JWT, if it's a refresh token rather than an access
+token, or if it's an access token that was not generated using `EAuthTokenPlatformType.MobileApp`.
+
+### getAuthSessionInfo(qrChallengeUrl)
+- `qrChallengeUrl` - A `string` containing the QR challenge URL from a [`startWithQR`](#startwithqrdetails) call
+
+Returns a Promise which resolves to an object with these properties:
+
+- `ip` - The origin IP address of the QR login attempt, as a string
+- `location` - An object
+	- `geoloc` - A string containing geo coordinates
+    - `city` - String
+    - `state` - String
+- `platformType` - The [`EAuthTokenPlatformType`](#eauthtokenplatformtype) provided for the QR code
+- `deviceFriendlyName` - The device name provided when the QR code was generated (likely a browser user-agent)
+- `version` - A number containing the version from the QR code, probably not useful to you
+- `loginHistory` - [`EAuthSessionSecurityHistory`](#eauthsessionsecurityhistory)
+- `locationMismatch` - A boolean indicating whether the location you requested the auth session info from doesn't match
+  the location where the QR code was generated
+- `highUsageLogin` - A boolean indicating "whether this login has seen high usage recently"
+- `requestedPersistence` - The [`ESessionPersistence`](#esessionpersistence) requested for this login
+
+### approveAuthSession(details)
+- `details` - An object with these properties:
+	- `qrChallengeUrl` - A `string` containing the QR challenge URL from a [`startWithQR`](#startwithqrdetails) call
+    - `approve` - `true` to approve the login or `false` to deny
+    - `persistence` - An option value from [`ESessionPersistence`](#esessionpersistence)
+
+Approves or denies an auth session from a QR URL. If you pass `true` for `approve`, then the next poll from the
+`LoginSession` will return access tokens. If you pass `false`, then the `LoginSession` will emit an [`error`](#error)
+event with [EResult](#eresult) `FileNotFound` (9).
+
+Returns a Promise which resolves with no value. Once this Promise resolves, you could call [`forcePoll`](#forcepoll),
+and the `LoginSession` should then immediately emit [`authenticated`](#authenticated).

@@ -333,6 +333,7 @@ export default class LoginSession extends EventEmitter {
 			this.accessToken = pollResponse.accessToken;
 			this.refreshToken = pollResponse.refreshToken;
 			this.emit('authenticated');
+			this.cancelLoginAttempt();
 		} else if (!this._pollingCanceled) {
 			this._pollTimer = setTimeout(() => this._doPoll(), this._startSessionResponse.pollInterval * 1000);
 		}
