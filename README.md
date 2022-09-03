@@ -64,6 +64,12 @@ import {EAuthTokenPlatformType} from 'steam-session';
 Contains the different platform types that can be authenticated for. You should specify the correct platform type when
 you instantiate a [`LoginSession`](#loginsession) object.
 
+Audiences present in tokens issued for the different platform types:
+
+- `SteamClient` - `['web', 'client']`
+- `WebBrowser` - `['web']`
+- `MobileApp` - `['web', 'mobile']`
+
 ### EResult
 
 ```js
