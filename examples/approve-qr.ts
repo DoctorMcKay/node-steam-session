@@ -4,9 +4,6 @@ import {createInterface} from 'readline';
 import {EAuthTokenPlatformType, ESessionPersistence, EAuthSessionSecurityHistory, LoginApprover, LoginSession} from '../src'; // use the following line if you installed the module from npm
 //import {EAuthTokenPlatformType, ESessionPersistence, EAuthSessionSecurityHistory, LoginApprover, LoginSession} from 'steam-session';
 
-// Create a variable where we can store an abort function to cancel stdin input
-let g_AbortPromptFunc;
-
 // We need to wrap everything in an async function since node <14.8 cannot use await in the top-level context
 main();
 async function main() {
@@ -83,11 +80,6 @@ function promptAsync(question, sensitiveInput = false): Promise<string> {
 			terminal: true
 		});
 
-		g_AbortPromptFunc = () => {
-			rl.close();
-			resolve('');
-		};
-
 		if (sensitiveInput) {
 			// We have to write the question manually if we didn't give readline an output stream
 			process.stdout.write(question);
@@ -99,18 +91,8 @@ function promptAsync(question, sensitiveInput = false): Promise<string> {
 				process.stdout.write('\n');
 			}
 
-			g_AbortPromptFunc = null;
 			rl.close();
 			resolve(result);
 		});
 	});
-}
-
-function abortPrompt() {
-	if (!g_AbortPromptFunc) {
-		return;
-	}
-
-	g_AbortPromptFunc();
-	process.stdout.write('\n');
 }

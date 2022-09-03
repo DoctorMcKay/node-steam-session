@@ -4,7 +4,7 @@ import {createHmac} from 'crypto';
 import ITransport from './transports/ITransport';
 import AuthenticationClient from './AuthenticationClient';
 import WebApiTransport from './transports/WebApiTransport';
-import {ApproveAuthSessionRequest, AuthSessionInfo} from './interfaces-external'
+import {ApproveAuthSessionRequest, AuthSessionInfo} from './interfaces-external';
 import {decodeJwt} from './helpers';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 
