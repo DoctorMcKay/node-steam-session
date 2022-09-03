@@ -281,6 +281,16 @@ export default class LoginSession extends EventEmitter {
 		return response;
 	}
 
+	forcePoll() {
+		this._verifyStarted();
+
+		if (!this._pollingStartedTime) {
+			throw new Error('Polling has not yet started');
+		}
+
+		this._doPoll();
+	}
+
 	async _doPoll() {
 		if (this._pollingCanceled) {
 			return;
