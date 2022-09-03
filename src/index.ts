@@ -4,6 +4,7 @@ import EResult from './enums-steam/EResult';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 
 import ITransport, {ApiRequest, ApiResponse} from './transports/ITransport';
+import LoginApprover from './LoginApprover';
 import LoginSession from './LoginSession';
 
 export {
@@ -14,5 +15,6 @@ export {
 	ITransport,
 	ApiRequest,
 	ApiResponse,
+	LoginApprover,
 	LoginSession
 };

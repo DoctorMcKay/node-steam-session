@@ -2,6 +2,7 @@ import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
+import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
 
 export interface StartAuthSessionRequest {
 	deviceFriendlyName?: string;
@@ -68,4 +69,31 @@ export interface PollLoginStatusResponse {
 	accessToken?: string;
 	hadRemoteInteraction?: boolean;
 	accountName?: string;
+}
+
+export interface GetAuthSessionInfoRequest {
+	clientId: string;
+}
+
+export interface GetAuthSessionInfoResponse {
+	ip: string;
+	geoloc: string;
+	city: string;
+	state: string;
+	platformType: EAuthTokenPlatformType;
+	deviceFriendlyName: string;
+	version: number;
+	loginHistory: EAuthSessionSecurityHistory;
+	locationMismatch: boolean;
+	highUsageLogin: boolean;
+	requestedPersistence: ESessionPersistence;
+}
+
+export interface MobileConfirmationRequest {
+	version: number;
+	clientId: string;
+	steamId: string;
+	signature: Buffer;
+	confirm: boolean;
+	persistence: ESessionPersistence;
 }

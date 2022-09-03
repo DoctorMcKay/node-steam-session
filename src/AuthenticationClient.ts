@@ -9,14 +9,16 @@ import {
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
 	CAuthentication_BeginAuthSessionViaQR_Request,
 	CAuthentication_BeginAuthSessionViaQR_Response,
+	CAuthentication_GetAuthSessionInfo_Request,
+	CAuthentication_GetAuthSessionInfo_Response,
 	CAuthentication_GetPasswordRSAPublicKey_Response,
 	CAuthentication_PollAuthSessionStatus_Request,
-	CAuthentication_PollAuthSessionStatus_Response,
+	CAuthentication_PollAuthSessionStatus_Response, CAuthentication_UpdateAuthSessionWithMobileConfirmation_Request,
 	CAuthentication_UpdateAuthSessionWithSteamGuardCode_Request
 } from './protobuf-generated/types';
 import {
 	CheckMachineAuthRequest,
-	CheckMachineAuthResponse,
+	CheckMachineAuthResponse, GetAuthSessionInfoRequest, GetAuthSessionInfoResponse, MobileConfirmationRequest,
 	PollLoginStatusRequest,
 	PollLoginStatusResponse,
 	StartAuthSessionRequest,
@@ -32,6 +34,7 @@ interface RequestDefinition {
 	apiMethod: string;
 	apiVersion: number;
 	data: any;
+	accessToken?: string;
 }
 
 export default class AuthenticationClient {
@@ -176,6 +179,53 @@ export default class AuthenticationClient {
 		};
 	}
 
+	async getAuthSessionInfo(accessToken: string, details: GetAuthSessionInfoRequest): Promise<GetAuthSessionInfoResponse> {
+		let data:CAuthentication_GetAuthSessionInfo_Request = {
+			client_id: details.clientId
+		};
+
+		let result:CAuthentication_GetAuthSessionInfo_Response = await this.sendRequest({
+			apiInterface: 'Authentication',
+			apiMethod: 'GetAuthSessionInfo',
+			apiVersion: 1,
+			data,
+			accessToken
+		});
+
+		return {
+			ip: result.ip,
+			geoloc: result.geoloc,
+			city: result.city,
+			state: result.state,
+			platformType: result.platform_type,
+			deviceFriendlyName: result.device_friendly_name,
+			version: result.version,
+			loginHistory: result.login_history,
+			locationMismatch: result.requestor_location_mismatch,
+			highUsageLogin: result.high_usage_login,
+			requestedPersistence: result.requested_persistence
+		};
+	}
+
+	async submitMobileConfirmation(accessToken: string, details: MobileConfirmationRequest): Promise<void> {
+		let data:CAuthentication_UpdateAuthSessionWithMobileConfirmation_Request = {
+			version: details.version,
+			client_id: details.clientId,
+			steamid: details.steamId,
+			signature: details.signature,
+			confirm: details.confirm,
+			persistence: details.persistence
+		};
+
+		await this.sendRequest({
+			apiInterface: 'Authentication',
+			apiMethod: 'UpdateAuthSessionWithMobileConfirmation',
+			apiVersion: 1,
+			data,
+			accessToken
+		});
+	}
+
 	async sendRequest(request: RequestDefinition): Promise<any> {
 		// Right now we really only support IAuthenticationService
 
@@ -190,7 +240,8 @@ export default class AuthenticationClient {
 			apiInterface: request.apiInterface,
 			apiMethod: request.apiMethod,
 			apiVersion: request.apiVersion,
-			requestData: requestProto.encode(request.data).finish()
+			requestData: requestProto.encode(request.data).finish(),
+			accessToken: request.accessToken
 		});
 
 		if (result.result != EResult.OK) {
