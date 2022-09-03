@@ -176,7 +176,10 @@ let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
     - `password` - Your account's password, as a string
     - `deviceFriendlyName` - Optional. A name to identify this device. Defaults to the Chrome user-agent.
     - `persistence` - Optional. A value from [ESessionPersistence](#esessionpersistence). Defaults to `Persistent`.
-    - `websiteId` - Optional. A string containing a valid website ID.
+    - `websiteId` - Optional. A string containing a valid website ID. Default values are listed:
+		- `EAuthTokenPlatformType.SteamClient` - "Client"
+        - `EAuthTokenPlatformType.WebBrowser` - "Community"
+        - `EAuthTokenPlatformType.Mobile` - "" TODO
     - `steamGuardMachineToken` - Optional. If you have a valid Steam Guard machine token, supplying it here will allow
       you to bypass email code verification.
     - `steamGuardCode` - Optional. If you have a valid Steam Guard code (either email or TOTP), supplying it here will
