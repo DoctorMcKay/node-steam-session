@@ -136,7 +136,7 @@ export default class LoginSession extends EventEmitter {
 	get _defaultWebsiteId() {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
-				return '';
+				return 'Client';
 
 			case EAuthTokenPlatformType.WebBrowser:
 				return 'Community';
