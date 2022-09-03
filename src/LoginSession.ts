@@ -42,13 +42,13 @@ export default class LoginSession extends EventEmitter {
 	_pollingCanceled?: boolean;
 
 	/**
-	 * @param {EAuthTokenPlatformType} [platformType=WebBrowser]
+	 * @param {EAuthTokenPlatformType} platformType
 	 * @param {ITransport} [transport=WebApiTransport]
 	 */
-	constructor(platformType?: EAuthTokenPlatformType, transport?: ITransport) {
+	constructor(platformType: EAuthTokenPlatformType, transport?: ITransport) {
 		super();
 
-		this._platformType = platformType || EAuthTokenPlatformType.WebBrowser;
+		this._platformType = platformType;
 		this._handler = new AuthenticationClient(transport || new WebApiTransport());
 
 		this.loginTimeout = 30000;
