@@ -6,6 +6,7 @@ export interface ApiRequest {
     apiVersion: number;
     accessToken?: string;
     requestData?: any;
+    headers?: any;
 }
 
 export interface ApiResponse {

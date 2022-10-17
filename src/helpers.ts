@@ -1,4 +1,10 @@
+import {createHash} from 'crypto';
+import {hostname} from 'os';
+import {stringify as encodeQueryString} from 'querystring';
+
 import EResult from './enums-steam/EResult';
+import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
+import {PlatformData} from './interfaces-internal';
 
 export function eresultError(result:EResult, errorMessage?:string): Error {
 	let resultMsg:string = result.toString(); // this is the numeric value, as a string
@@ -11,9 +17,10 @@ export function eresultError(result:EResult, errorMessage?:string): Error {
 }
 
 export const API_HEADERS = {
-	origin: 'https://steamcommunity.com',
-	referer: 'https://steamcommunity.com/',
-	accept: 'application/json, text/plain, */*'
+	accept: 'application/json, text/plain, */*',
+	'sec-fetch-site': 'cross-site',
+	'sec-fetch-mode': 'cors',
+	'sec-fetch-dest': 'empty'
 };
 
 export function decodeJwt(jwt:string): any {
@@ -26,4 +33,72 @@ export function decodeJwt(jwt:string): any {
 		.replace(/_/g, '/');
 
 	return JSON.parse(Buffer.from(standardBase64, 'base64').toString('utf8'));
+}
+
+export function getDataForPlatformType(platformType:EAuthTokenPlatformType): PlatformData {
+	switch (platformType) {
+		case EAuthTokenPlatformType.SteamClient:
+			let refererQuery = {
+				IN_CLIENT: 'true',
+				WEBSITE_ID: 'Client',
+				LOCAL_HOSTNAME: getSpoofedHostname(),
+				WEBAPI_BASE_URL: 'https://api.steampowered.com/',
+				STORE_BASE_URL: 'https://store.steampowered.com/',
+				USE_POPUPS: 'true',
+				DEV_MODE: 'false',
+				LANGUAGE: 'english',
+				PLATFORM: 'windows',
+				COUNTRY: 'US',
+				LAUNCHER_TYPE: '0',
+				IN_LOGIN: 'true'
+			};
+
+			return {
+				websiteId: 'Client',
+				headers: {
+					'user-agent': 'Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/1665786434; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
+					origin: 'https://steamloopback.host',
+					referer: 'https://steamloopback.host/index.html?' + encodeQueryString(refererQuery)
+				}
+			};
+
+		case EAuthTokenPlatformType.WebBrowser:
+			return {
+				websiteId: 'Community',
+				headers: {
+					'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+					origin: 'https://steamcommunity.com',
+					referer: 'https://steamcommunity.com'
+				}
+			};
+
+		case EAuthTokenPlatformType.MobileApp:
+			return {
+				websiteId: 'Mobile',
+				headers: {
+					'user-agent': 'okhttp/3.12.12',
+					cookie: 'mobileClient=android; mobileClientVersion=777777 3.0.0'
+				}
+			}
+
+		default:
+			let err:any = new Error('Unsupported platform type');
+			err.platformType = platformType;
+			throw err;
+	}
+}
+
+function getSpoofedHostname() {
+	let hash = createHash('sha1');
+	hash.update(hostname());
+	let sha1 = hash.digest();
+
+	const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+	let output = 'DESKTOP-';
+	for (let i = 0; i < 7; i++) {
+		output += CHARS[sha1[i] % CHARS.length];
+	}
+
+	return output;
 }

@@ -17,7 +17,7 @@ export default class WebApiTransport implements ITransport {
 		let requestOptions:AxiosRequestConfig = {
 			method: GET_REQUESTS.includes(urlPath) ? 'GET' : 'POST',
 			url: `https://api.steampowered.com/${urlPath}`,
-			headers: Object.assign({}, API_HEADERS),
+			headers: {...API_HEADERS, ...(request.headers || {})},
 			responseType: 'arraybuffer'
 		};
 

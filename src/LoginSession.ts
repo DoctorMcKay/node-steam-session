@@ -49,7 +49,8 @@ export default class LoginSession extends EventEmitter {
 		super();
 
 		this._platformType = platformType;
-		this._handler = new AuthenticationClient(transport || new WebApiTransport());
+		this._handler = new AuthenticationClient(transport || new WebApiTransport(), this._platformType);
+		this._handler.on('debug', (...args) => this.emit('debug', ...args));
 
 		this.loginTimeout = 30000;
 	}
@@ -175,12 +176,10 @@ export default class LoginSession extends EventEmitter {
 		let encryptionResult = await this._handler.encryptPassword(details.accountName, details.password);
 
 		this._startSessionResponse = await this._handler.startSessionWithCredentials({
-			deviceFriendlyName: details.deviceFriendlyName,
 			accountName: details.accountName,
 			...encryptionResult,
 			persistence: details.persistence || ESessionPersistence.Persistent,
 			platformType: this._platformType,
-			websiteId: details.websiteId || this._defaultWebsiteId
 		});
 
 		this.emit('debug', 'start session response', this._startSessionResponse);
@@ -361,6 +360,8 @@ export default class LoginSession extends EventEmitter {
 				machineAuthToken: this._steamGuardMachineToken,
 				...(this._startSessionResponse as StartAuthSessionWithCredentialsResponse)
 			});
+
+			this.emit('debug', `machine auth check response: ${EResult[result.result]}`);
 
 			if (result.result == EResult.OK) {
 				// Machine auth succeeded

@@ -3,7 +3,7 @@ import {hex2b64, Key as RSAKey} from 'node-bignumber';
 import Protos from './protobuf-generated/load';
 import ITransport, {ApiResponse} from './transports/ITransport';
 import EResult from './enums-steam/EResult';
-import {API_HEADERS, eresultError} from './helpers';
+import {API_HEADERS, eresultError, getDataForPlatformType} from './helpers';
 import {
 	CAuthentication_BeginAuthSessionViaCredentials_Request,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
@@ -28,6 +28,8 @@ import {
 } from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
+import EventEmitter from 'events';
+import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 
 interface RequestDefinition {
 	apiInterface: string;
@@ -37,11 +39,14 @@ interface RequestDefinition {
 	accessToken?: string;
 }
 
-export default class AuthenticationClient {
+export default class AuthenticationClient extends EventEmitter {
 	_transport: ITransport;
+	_platformType: EAuthTokenPlatformType;
 
-	constructor(transport: ITransport) {
+	constructor(transport: ITransport, platformType: EAuthTokenPlatformType) {
+		super();
 		this._transport = transport;
+		this._platformType = platformType;
 	}
 
 	async getRsaKey(accountName: string): Promise<CAuthentication_GetPasswordRSAPublicKey_Response> {
@@ -66,16 +71,15 @@ export default class AuthenticationClient {
 	}
 
 	async startSessionWithCredentials(details: StartAuthSessionWithCredentialsRequest): Promise<StartAuthSessionWithCredentialsResponse> {
+		let {websiteId} = getDataForPlatformType(details.platformType);
+
 		let data:CAuthentication_BeginAuthSessionViaCredentials_Request = {
-			// TODO: use appropriate user-agent based on platform type
-			device_friendly_name: details.deviceFriendlyName || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36',
 			account_name: details.accountName,
 			encrypted_password: details.encryptedPassword,
 			encryption_timestamp: details.keyTimestamp,
 			remember_login: details.persistence == ESessionPersistence.Persistent,
-			platform_type: details.platformType,
 			persistence: details.persistence,
-			website_id: details.websiteId
+			website_id: websiteId
 		};
 
 		let result:CAuthentication_BeginAuthSessionViaCredentials_Response = await this.sendRequest({
@@ -236,12 +240,16 @@ export default class AuthenticationClient {
 			throw new Error(`Unknown API method ${request.apiInterface}/${request.apiMethod}`);
 		}
 
+		let {headers} = getDataForPlatformType(this._platformType);
+		this.emit('debug', request.apiMethod, request.data, headers);
+
 		let result:ApiResponse = await this._transport.sendRequest({
 			apiInterface: request.apiInterface,
 			apiMethod: request.apiMethod,
 			apiVersion: request.apiVersion,
 			requestData: requestProto.encode(request.data).finish(),
-			accessToken: request.accessToken
+			accessToken: request.accessToken,
+			headers
 		});
 
 		if (result.result != EResult.OK) {

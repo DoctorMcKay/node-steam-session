@@ -7,6 +7,7 @@ import WebApiTransport from './transports/WebApiTransport';
 import {ApproveAuthSessionRequest, AuthSessionInfo} from './interfaces-external';
 import {decodeJwt} from './helpers';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
+import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 
 export default class LoginApprover {
 	_accessToken: string;
@@ -17,7 +18,7 @@ export default class LoginApprover {
 	constructor(accessToken: string, sharedSecret: string|Buffer, transport?: ITransport) {
 		this.accessToken = accessToken;
 		this.sharedSecret = sharedSecret;
-		this._handler = new AuthenticationClient(transport || new WebApiTransport());
+		this._handler = new AuthenticationClient(transport || new WebApiTransport(), EAuthTokenPlatformType.MobileApp);
 	}
 
 	get steamID(): SteamID {

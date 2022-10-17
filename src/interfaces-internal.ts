@@ -4,6 +4,11 @@ import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
 
+export interface PlatformData {
+	headers: any;
+	websiteId: string;
+}
+
 export interface StartAuthSessionRequest {
 	deviceFriendlyName?: string;
 	platformType: EAuthTokenPlatformType;
@@ -21,7 +26,7 @@ export interface StartAuthSessionWithCredentialsRequest extends StartAuthSession
 	encryptedPassword: string;
 	keyTimestamp: string;
 	persistence: ESessionPersistence;
-	websiteId: string;
+	platformType: EAuthTokenPlatformType;
 }
 
 export interface StartAuthSessionWithCredentialsResponse extends StartAuthSessionResponse {

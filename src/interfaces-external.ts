@@ -6,9 +6,7 @@ import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHisto
 export interface StartLoginSessionWithCredentialsDetails {
 	accountName: string;
 	password: string;
-	deviceFriendlyName?: string;
 	persistence?: ESessionPersistence;
-	websiteId?: string;
 	steamGuardMachineToken?: string;
 	steamGuardCode?: string;
 }
