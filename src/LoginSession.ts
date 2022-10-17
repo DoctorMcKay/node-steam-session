@@ -136,40 +136,6 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	get steamGuardMachineToken(): string { return this._steamGuardMachineToken; }
-	set steamGuardMachineToken(token: string) {
-		if (!token) {
-			this._steamGuardMachineToken = token;
-			return;
-		}
-
-		let decoded = decodeJwt(token);
-
-		try { new SteamID(decoded.sub); } catch {
-			throw new Error('Not a valid Steam machine token');
-		}
-
-		if (!(decoded.aud || []).includes('machine')) {
-			throw new Error('This token is not a machine token');
-		}
-
-		if (
-			this._startSessionResponse
-			&& (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
-			&& decoded.sub != (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
-		) {
-			throw new Error('Token is for a different account. To work with a different account, create a new LoginSession.');
-		}
-
-		if (this._accessToken) {
-			let decodedAccessToken = decodeJwt(this._accessToken);
-			if (decodedAccessToken.sub != decoded.sub) {
-				throw new Error('This refresh token belongs to a different account from the set access token.');
-			}
-		}
-
-		// Everything checks out
-		this._steamGuardMachineToken = token;
-	}
 
 	get _defaultWebsiteId() {
 		switch (this._platformType) {
@@ -217,7 +183,7 @@ export default class LoginSession extends EventEmitter {
 			...encryptionResult,
 			persistence: details.persistence || ESessionPersistence.Persistent,
 			platformType: this._platformType,
-			steamGuardMachineToken: this._steamGuardMachineToken
+			steamGuardMachineToken: this.steamGuardMachineToken
 		});
 
 		this.emit('debug', 'start session response', this._startSessionResponse);
@@ -400,7 +366,7 @@ export default class LoginSession extends EventEmitter {
 			&& this._startSessionResponse.allowedConfirmations.some(c => c.type == EAuthSessionGuardType.MachineToken)
 		) {
 			let result = await this._handler.checkMachineAuthOrSendCodeEmail({
-				machineAuthToken: this._steamGuardMachineToken,
+				machineAuthToken: this.steamGuardMachineToken,
 				...(this._startSessionResponse as StartAuthSessionWithCredentialsResponse)
 			});
 
