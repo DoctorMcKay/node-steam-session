@@ -390,6 +390,9 @@ This event is emitted when Steam sends us a new Steam Guard machine token. Machi
 into an account that has email-based Steam Guard enabled. Thus, this will only be emitted after successfully logging into
 such an account.
 
+At this time, this event is only emitted when logging in using EAuthTokenPlatformType = SteamClient. It's not presently
+possible to get a machine token for the WebBrowser platform (and MobileApp platform doesn't support machine tokens at all).
+
 When this event is emitted, the [`steamGuardMachineToken`](#steamguardmachinetoken) property contains your new machine
 token.
 
