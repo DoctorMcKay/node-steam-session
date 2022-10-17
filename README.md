@@ -215,11 +215,9 @@ Setting this property will throw an Error if:
 
 ### steamGuardMachineToken
 
-A `string` containing your Steam Guard machine token. This is populated when you pass a `steamGuardMachineToken` to
+**Read-only.** A `string` containing your Steam Guard machine token. This is populated when you pass a `steamGuardMachineToken` to
 [`startWithCredentials`](#startwithcredentialsdetails), or just before the [`steamGuardMachineToken`](#steamguardmachinetoken-1)
 event is emitted.
-
-This is a read-only property.
 
 ## Methods
 
