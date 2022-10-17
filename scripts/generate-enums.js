@@ -7,6 +7,7 @@ const ENUMS = [
 	'EAuthTokenPlatformType',
 	'EResult',
 	'ESessionPersistence',
+	'EOSType',
 
 	// Following enums-steam are only used in typescript definitions for protobufs
 	'EBanContentCheckResult',
