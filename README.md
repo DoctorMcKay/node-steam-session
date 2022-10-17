@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/steam-session.svg)](https://npmjs.com/package/steam-session)
 [![npm downloads](https://img.shields.io/npm/dm/steam-session.svg)](https://npmjs.com/package/steam-session)
 [![license](https://img.shields.io/npm/l/steam-session.svg)](https://github.com/DoctorMcKay/node-steam-session/blob/master/LICENSE)
-[![paypal](https://img.shields.io/badge/paypal-donate-yellow.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=N36YVAT42CZ4G&item_name=node%2dsteam%2dsession&currency_code=USD)
+[![sponsors](https://img.shields.io/github/sponsors/DoctorMcKay.svg)](https://github.com/sponsors/DoctorMcKay)
 
 This module enables you to negotiate Steam tokens by authenticating with the Steam login server. **This is for use with
 your own accounts.** This is not to be used to authenticate other Steam users or to gain access to their accounts. For
