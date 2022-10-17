@@ -8,13 +8,15 @@ import ITransport from './transports/ITransport';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import WebApiTransport from './transports/WebApiTransport';
 import {
-	StartLoginSessionWithCredentialsDetails, StartLoginSessionWithQRDetails,
+	StartLoginSessionWithCredentialsDetails,
+	StartLoginSessionWithQRDetails,
 	StartSessionResponse,
 	StartSessionResponseValidAction
 } from './interfaces-external';
 import {
 	StartAuthSessionResponse,
-	StartAuthSessionWithCredentialsResponse, StartAuthSessionWithQrResponse
+	StartAuthSessionWithCredentialsResponse,
+	StartAuthSessionWithQrResponse
 } from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
@@ -50,7 +52,7 @@ export default class LoginSession extends EventEmitter {
 
 		this._platformType = platformType;
 		this._handler = new AuthenticationClient(transport || new WebApiTransport(), this._platformType);
-		this._handler.on('debug', (...args) => this.emit('debug', ...args));
+		this._handler.on('debug', (...args) => this.emit('debug-handler', ...args));
 
 		this.loginTimeout = 30000;
 	}
@@ -134,6 +136,42 @@ export default class LoginSession extends EventEmitter {
 		this._refreshToken = token;
 	}
 
+	get steamGuardMachineToken(): string { return this._steamGuardMachineToken; }
+	set steamGuardMachineToken(token: string) {
+		if (!token) {
+			this._steamGuardMachineToken = token;
+			return;
+		}
+
+		let decoded = decodeJwt(token);
+
+		try { new SteamID(decoded.sub); } catch {
+			throw new Error('Not a valid Steam machine token');
+		}
+
+		if (!(decoded.aud || []).includes('machine')) {
+			throw new Error('This token is not a machine token');
+		}
+
+		if (
+			this._startSessionResponse
+			&& (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
+			&& decoded.sub != (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
+		) {
+			throw new Error('Token is for a different account. To work with a different account, create a new LoginSession.');
+		}
+
+		if (this._accessToken) {
+			let decodedAccessToken = decodeJwt(this._accessToken);
+			if (decodedAccessToken.sub != decoded.sub) {
+				throw new Error('This refresh token belongs to a different account from the set access token.');
+			}
+		}
+
+		// Everything checks out
+		this._steamGuardMachineToken = token;
+	}
+
 	get _defaultWebsiteId() {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
@@ -180,6 +218,7 @@ export default class LoginSession extends EventEmitter {
 			...encryptionResult,
 			persistence: details.persistence || ESessionPersistence.Persistent,
 			platformType: this._platformType,
+			steamGuardMachineToken: this._steamGuardMachineToken
 		});
 
 		this.emit('debug', 'start session response', this._startSessionResponse);
@@ -327,6 +366,11 @@ export default class LoginSession extends EventEmitter {
 			this.emit('remoteInteraction');
 		}
 
+		if (pollResponse.newSteamGuardMachineAuth) {
+			this._steamGuardMachineToken = pollResponse.newSteamGuardMachineAuth;
+			this.emit('steamGuardMachineToken');
+		}
+
 		if (pollResponse.accessToken) {
 			this._accountName = pollResponse.accountName;
 			this.accessToken = pollResponse.accessToken;
@@ -355,7 +399,10 @@ export default class LoginSession extends EventEmitter {
 		}
 
 		// Can we use a machine auth token?
-		if (this._startSessionResponse.allowedConfirmations.some(c => c.type == EAuthSessionGuardType.MachineToken)) {
+		if (
+			this._platformType == EAuthTokenPlatformType.WebBrowser
+			&& this._startSessionResponse.allowedConfirmations.some(c => c.type == EAuthSessionGuardType.MachineToken)
+		) {
 			let result = await this._handler.checkMachineAuthOrSendCodeEmail({
 				machineAuthToken: this._steamGuardMachineToken,
 				...(this._startSessionResponse as StartAuthSessionWithCredentialsResponse)

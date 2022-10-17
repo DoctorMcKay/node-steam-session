@@ -3,7 +3,7 @@ import {hex2b64, Key as RSAKey} from 'node-bignumber';
 import Protos from './protobuf-generated/load';
 import ITransport, {ApiResponse} from './transports/ITransport';
 import EResult from './enums-steam/EResult';
-import {API_HEADERS, eresultError, getDataForPlatformType} from './helpers';
+import {API_HEADERS, eresultError, getDataForPlatformType, isJwtValidForAudience} from './helpers';
 import {
 	CAuthentication_BeginAuthSessionViaCredentials_Request,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
@@ -82,6 +82,10 @@ export default class AuthenticationClient extends EventEmitter {
 			website_id: websiteId,
 			device_details: deviceDetails
 		};
+
+		if (details.steamGuardMachineToken && isJwtValidForAudience(details.steamGuardMachineToken, 'machine')) {
+			data.guard_data = details.steamGuardMachineToken;
+		}
 
 		let result:CAuthentication_BeginAuthSessionViaCredentials_Response = await this.sendRequest({
 			apiInterface: 'Authentication',
@@ -180,7 +184,8 @@ export default class AuthenticationClient extends EventEmitter {
 			refreshToken: result.refresh_token,
 			accessToken: result.access_token,
 			hadRemoteInteraction: result.had_remote_interaction,
-			accountName: result.account_name
+			accountName: result.account_name,
+			newSteamGuardMachineAuth: result.new_guard_data
 		};
 	}
 

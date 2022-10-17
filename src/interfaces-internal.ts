@@ -12,7 +12,6 @@ export interface PlatformData {
 }
 
 export interface StartAuthSessionRequest {
-	deviceFriendlyName?: string;
 	platformType: EAuthTokenPlatformType;
 }
 
@@ -29,6 +28,7 @@ export interface StartAuthSessionWithCredentialsRequest extends StartAuthSession
 	keyTimestamp: string;
 	persistence: ESessionPersistence;
 	platformType: EAuthTokenPlatformType;
+	steamGuardMachineToken?: string;
 }
 
 export interface StartAuthSessionWithCredentialsResponse extends StartAuthSessionResponse {
@@ -76,6 +76,7 @@ export interface PollLoginStatusResponse {
 	accessToken?: string;
 	hadRemoteInteraction?: boolean;
 	accountName?: string;
+	newSteamGuardMachineAuth?: string;
 }
 
 export interface GetAuthSessionInfoRequest {
