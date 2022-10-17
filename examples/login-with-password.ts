@@ -12,11 +12,15 @@ async function main() {
 	let accountName = await promptAsync('Username: ');
 	let password = await promptAsync('Password: ', true);
 
+	console.log('\nIf you\'re logging into an account using email Steam Guard and you have a machine token, enter it below. Otherwise, just hit enter.');
+	let steamGuardMachineToken = await promptAsync('Machine Token: ');
+
 	// Create our LoginSession and start a login session using our credentials. This session will be for a web login.
-	let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
+	let session = new LoginSession(EAuthTokenPlatformType.SteamClient);
 	let startResult = await session.startWithCredentials({
 		accountName,
-		password
+		password,
+		steamGuardMachineToken
 	});
 
 	// actionRequired will be true if we need to do something to finish logging in, e.g. supply a code or approve a
@@ -64,10 +68,15 @@ async function main() {
 		promptingGuards.forEach(printGuard);
 	}
 
+	session.on('steamGuardMachineToken', () => {
+		console.log('\nReceived new Steam Guard machine token');
+		console.log(`Machine Token: ${session.steamGuardMachineToken}`);
+	});
+
 	session.on('authenticated', async () => {
 		abortPrompt();
 
-		console.log('Authenticated successfully! Printing your tokens now...');
+		console.log('\nAuthenticated successfully! Printing your tokens now...');
 		console.log(`SteamID: ${session.steamID}`);
 		console.log(`Account name: ${session.accountName}`);
 		console.log(`Access token: ${session.accessToken}`);

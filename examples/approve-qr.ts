@@ -27,7 +27,7 @@ async function main() {
 	});
 
 	session.on('authenticated', async () => {
-		console.log('Authenticated successfully! Printing your tokens now...');
+		console.log('\nAuthenticated successfully! Printing your tokens now...');
 		console.log(`SteamID: ${session.steamID}`);
 		console.log(`Account name: ${session.accountName}`);
 		console.log(`Access token: ${session.accessToken}`);

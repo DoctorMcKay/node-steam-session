@@ -16,8 +16,11 @@ async function main() {
 		console.log('Looks like you\'ve scanned the code! Now just approve the login.');
 	});
 
+	// No need to handle steamGuardMachineToken since it's only applicable to accounts using email Steam Guard,
+	// and such accounts can't be authed using a QR code.
+
 	session.on('authenticated', async () => {
-		console.log('Authenticated successfully! Printing your tokens now...');
+		console.log('\nAuthenticated successfully! Printing your tokens now...');
 		console.log(`SteamID: ${session.steamID}`);
 		console.log(`Account name: ${session.accountName}`);
 		console.log(`Access token: ${session.accessToken}`);
