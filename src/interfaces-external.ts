@@ -11,10 +11,6 @@ export interface StartLoginSessionWithCredentialsDetails {
 	steamGuardCode?: string;
 }
 
-export interface StartLoginSessionWithQRDetails {
-	deviceFriendlyName?: string;
-}
-
 export interface StartSessionResponse {
 	actionRequired: boolean;
 	validActions?: StartSessionResponseValidAction[];

@@ -9,7 +9,6 @@ import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import WebApiTransport from './transports/WebApiTransport';
 import {
 	StartLoginSessionWithCredentialsDetails,
-	StartLoginSessionWithQRDetails,
 	StartSessionResponse,
 	StartSessionResponseValidAction
 } from './interfaces-external';
@@ -226,9 +225,7 @@ export default class LoginSession extends EventEmitter {
 		return await this._processStartSessionResponse();
 	}
 
-	async startWithQR(details?: StartLoginSessionWithQRDetails): Promise<StartSessionResponse> {
-		details = details || {};
-
+	async startWithQR(): Promise<StartSessionResponse> {
 		if (this._startSessionResponse) {
 			throw new Error('A session has already been started on this LoginSession object. Create a new LoginSession to start a new session.');
 		}
@@ -236,7 +233,6 @@ export default class LoginSession extends EventEmitter {
 		this._hadRemoteInteraction = false;
 
 		this._startSessionResponse = await this._handler.startSessionWithQR({
-			deviceFriendlyName: details.deviceFriendlyName,
 			platformType: this._platformType
 		});
 
