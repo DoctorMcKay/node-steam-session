@@ -5,7 +5,7 @@ import {EAuthTokenPlatformType, LoginSession} from '../src'; // use the followin
 main();
 async function main() {
 	// Create our LoginSession and start a QR login session.
-	let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
+	let session = new LoginSession(EAuthTokenPlatformType.MobileApp);
 	session.loginTimeout = 120000; // timeout after 2 minutes
 	let startResult = await session.startWithQR();
 
