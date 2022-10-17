@@ -211,6 +211,14 @@ Setting this property will throw an Error if:
 - You have already called [`startWithCredentials`](#startwithcredentialsdetails) and you set it to a token that doesn't belong to the same account, or
 - You have already set [`accessToken`](#accesstoken) and you set this to a token that doesn't belong to the same account as the access token
 
+### steamGuardMachineToken
+
+A `string` containing your Steam Guard machine token. This is populated when you pass a `steamGuardMachineToken` to
+[`startWithCredentials`](#startwithcredentialsdetails), or just before the [`steamGuardMachineToken`](#steamguardmachinetoken-1)
+event is emitted.
+
+This is a read-only property.
+
 ## Methods
 
 ### Constructor(platformType[, transport])
@@ -231,18 +239,18 @@ let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
 - `details` - An object with these properties:
 	- `accountName` - Your account's login name, as a string
     - `password` - Your account's password, as a string
-    - `deviceFriendlyName` - Optional. A name to identify this device. Defaults to the Chrome user-agent.
     - `persistence` - Optional. A value from [ESessionPersistence](#esessionpersistence). Defaults to `Persistent`.
-    - `websiteId` - Optional. A string containing a valid website ID. Default values are listed:
-		- `EAuthTokenPlatformType.SteamClient` - "Client"
-        - `EAuthTokenPlatformType.WebBrowser` - "Community"
-        - `EAuthTokenPlatformType.Mobile` - "Mobile"
     - `steamGuardMachineToken` - Optional. If you have a valid Steam Guard machine token, supplying it here will allow
       you to bypass email code verification.
     - `steamGuardCode` - Optional. If you have a valid Steam Guard code (either email or TOTP), supplying it here will
       attempt to use it during login.
 
 Starts a new login attempt using your account credentials. Returns a Promise.
+
+If you supply a `steamGuardCode` here and you're using email-based Steam Guard, Steam will send you a new Steam Guard
+email if you're using EAuthTokenPlatformType = SteamClient or MobileApp. You would ideally keep your LoginSession active
+that generated your first email, and pass the code using [`submitSteamGuardCode`](#submitsteamguardcodeauthcode) instead
+of creating a new LoginSession and supplying the code to `startWithCredentials`.
 
 On failure, the Promise will be rejected with its message being equal to the string representation of an [EResult](#eresult)
 value. There will also be an `eresult` property on the Error object equal to the numeric representation of the relevant
@@ -276,14 +284,12 @@ Here's a list of which guard types might be present in this method's response, a
 - `EmailConfirmation`: You need to approve the confirmation email sent to you. If this guard type is
   present, [polling](#polling) will start and [`loginTimeout`](#logintimeout) will be in effect.
 
-Note that multiple guard types might be available, for example both `DeviceCode` and `DeviceConfirmation` can be
+Note that multiple guard types might be available; for example both `DeviceCode` and `DeviceConfirmation` can be
 available at the same time.
 
 When this method resolves, [`steamID`](#steamid) will be populated.
 
-### startWithQR([details])
-- `details` - Optional. An object with these properties:
-	- `deviceFriendlyName` - Optional. A name to identify this device. Defaults to the Chrome user-agent.
+### startWithQR()
 
 Starts a new QR login attempt. Returns a Promise.
 
@@ -377,6 +383,15 @@ called internally.
 This event is emitted when Steam reports a "remote interaction" via [polling](#polling). This is observed to happen
 when the approval prompt is viewed in the Steam mobile app for the `DeviceConfirmation` guard. For a [QR login](#startwithqrdetails),
 this would be after you scan the code, but before you tap approve or deny.
+
+### steamGuardMachineToken
+
+This event is emitted when Steam sends us a new Steam Guard machine token. Machine tokens are only relevant when logging
+into an account that has email-based Steam Guard enabled. Thus, this will only be emitted after successfully logging into
+such an account.
+
+When this event is emitted, the [`steamGuardMachineToken`](#steamguardmachinetoken) property contains your new machine
+token.
 
 ### authenticated
 
