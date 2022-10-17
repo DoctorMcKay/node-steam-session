@@ -5,6 +5,9 @@ import {stringify as encodeQueryString} from 'querystring';
 import EResult from './enums-steam/EResult';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import {PlatformData} from './interfaces-internal';
+import EOSType from './enums-steam/EOSType';
+
+const CHROME_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36';
 
 export function eresultError(result:EResult, errorMessage?:string): Error {
 	let resultMsg:string = result.toString(); // this is the numeric value, as a string
@@ -35,6 +38,22 @@ export function decodeJwt(jwt:string): any {
 	return JSON.parse(Buffer.from(standardBase64, 'base64').toString('utf8'));
 }
 
+export function isJwtValidForAudience(jwt:string, audience:string, steamId?:string): boolean {
+	let decodedToken:any;
+	try {
+		decodedToken = decodeJwt(jwt);
+	} catch (ex) {
+		return false;
+	}
+
+	// Check if the steamid matches
+	if (steamId && decodedToken.sub != steamId) {
+		return false;
+	}
+
+	return (decodedToken.aud || []).includes(audience);
+}
+
 export function getDataForPlatformType(platformType:EAuthTokenPlatformType): PlatformData {
 	switch (platformType) {
 		case EAuthTokenPlatformType.SteamClient:
@@ -59,6 +78,13 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 					'user-agent': 'Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/1665786434; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
 					origin: 'https://steamloopback.host',
 					referer: 'https://steamloopback.host/index.html?' + encodeQueryString(refererQuery)
+				},
+				deviceDetails: {
+					device_friendly_name: refererQuery.LOCAL_HOSTNAME,
+					platform_type: EAuthTokenPlatformType.SteamClient,
+					os_type: EOSType.Windows10,
+					// EGamingDeviceType full definition is unknown, but 1 appears to be a desktop PC
+					gaming_device_type: 1
 				}
 			};
 
@@ -66,9 +92,13 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 			return {
 				websiteId: 'Community',
 				headers: {
-					'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+					'user-agent': CHROME_USER_AGENT,
 					origin: 'https://steamcommunity.com',
 					referer: 'https://steamcommunity.com'
+				},
+				deviceDetails: {
+					device_friendly_name: CHROME_USER_AGENT,
+					platform_type: EAuthTokenPlatformType.WebBrowser
 				}
 			};
 
@@ -78,8 +108,14 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 				headers: {
 					'user-agent': 'okhttp/3.12.12',
 					cookie: 'mobileClient=android; mobileClientVersion=777777 3.0.0'
+				},
+				deviceDetails: {
+					device_friendly_name: 'Galaxy S22',
+					platform_type: EAuthTokenPlatformType.MobileApp,
+					os_type: EOSType.AndroidUnknown,
+					gaming_device_type: 528 // dunno
 				}
-			}
+			};
 
 		default:
 			let err:any = new Error('Unsupported platform type');

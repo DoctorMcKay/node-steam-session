@@ -71,7 +71,7 @@ export default class AuthenticationClient extends EventEmitter {
 	}
 
 	async startSessionWithCredentials(details: StartAuthSessionWithCredentialsRequest): Promise<StartAuthSessionWithCredentialsResponse> {
-		let {websiteId} = getDataForPlatformType(details.platformType);
+		let {websiteId, deviceDetails} = getDataForPlatformType(details.platformType);
 
 		let data:CAuthentication_BeginAuthSessionViaCredentials_Request = {
 			account_name: details.accountName,
@@ -79,7 +79,8 @@ export default class AuthenticationClient extends EventEmitter {
 			encryption_timestamp: details.keyTimestamp,
 			remember_login: details.persistence == ESessionPersistence.Persistent,
 			persistence: details.persistence,
-			website_id: websiteId
+			website_id: websiteId,
+			device_details: deviceDetails
 		};
 
 		let result:CAuthentication_BeginAuthSessionViaCredentials_Response = await this.sendRequest({
@@ -100,10 +101,10 @@ export default class AuthenticationClient extends EventEmitter {
 	}
 
 	async startSessionWithQR(details: StartAuthSessionRequest): Promise<StartAuthSessionWithQrResponse> {
+		let {deviceDetails} = getDataForPlatformType(details.platformType);
+
 		let data:CAuthentication_BeginAuthSessionViaQR_Request = {
-			// TODO: use appropriate user-agent based on platform type
-			device_friendly_name: details.deviceFriendlyName || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36',
-			platform_type: details.platformType
+			device_details: deviceDetails
 		};
 
 		let result:CAuthentication_BeginAuthSessionViaQR_Response = await this.sendRequest({

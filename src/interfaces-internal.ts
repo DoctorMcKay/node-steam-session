@@ -3,10 +3,12 @@ import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
+import {CAuthentication_DeviceDetails} from './protobuf-generated/types';
 
 export interface PlatformData {
 	headers: any;
 	websiteId: string;
+	deviceDetails: CAuthentication_DeviceDetails;
 }
 
 export interface StartAuthSessionRequest {
