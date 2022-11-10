@@ -1,5 +1,5 @@
-const Axios = require('axios');
 const FS = require('fs');
+const HTTPS = require('https');
 const Path = require('path');
 
 const ENUMS = [
@@ -27,7 +27,7 @@ async function main() {
 		let url = `https://raw.githubusercontent.com/DoctorMcKay/node-steam-user/master/enums/${name}.js`;
 		console.log(`Download ${url}`);
 
-		let {data: body} = await Axios.get(url);
+		let body = await download(url);
 		let module = {};
 		eval(body);
 
@@ -50,4 +50,20 @@ async function main() {
 		FS.writeFileSync(Path.join(__dirname, '..', 'src', 'enums-steam', `${name}.ts`), output);
 		console.log(`Written ${name}.ts`);
 	}
+}
+
+function download(url) {
+	return new Promise((resolve, reject) => {
+		let req = HTTPS.get(url, (res) => {
+			if (res.statusCode != 200) {
+				return reject(new Error(`HTTP error ${res.statusCode}`));
+			}
+
+			let body = '';
+			res.on('data', chunk => body += chunk.toString('utf8'));
+			res.on('end', () => resolve(body));
+		});
+
+		req.on('error', reject);
+	});
 }
