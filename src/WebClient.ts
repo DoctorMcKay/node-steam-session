@@ -36,7 +36,7 @@ export default class WebClient {
 		return await this._req(buildUrl(url, options), body, buildRequestOptions('POST', options));
 	}
 
-	async postEncoded(url: string, body: object, encoding: string = 'json', options?: RequestOptions): Promise<ResponseData> {
+	async postEncoded(url: string, body: object, encoding = 'json', options?: RequestOptions): Promise<ResponseData> {
 		let encodedBody:string|Buffer,
 			contentType:string;
 		switch (encoding) {
