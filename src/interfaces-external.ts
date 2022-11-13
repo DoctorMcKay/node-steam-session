@@ -2,6 +2,13 @@ import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
+import ITransport from './transports/ITransport';
+
+export interface ConstructorOptions {
+	transport?: ITransport,
+	socksProxy?: string,
+	httpProxy?: string
+}
 
 export interface StartLoginSessionWithCredentialsDetails {
 	accountName: string;

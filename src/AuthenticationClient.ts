@@ -1,3 +1,4 @@
+import createDebug from 'debug';
 import {hex2b64, Key as RSAKey} from 'node-bignumber';
 
 import Protos from './protobuf-generated/load';
@@ -13,23 +14,30 @@ import {
 	CAuthentication_GetAuthSessionInfo_Response,
 	CAuthentication_GetPasswordRSAPublicKey_Response,
 	CAuthentication_PollAuthSessionStatus_Request,
-	CAuthentication_PollAuthSessionStatus_Response, CAuthentication_UpdateAuthSessionWithMobileConfirmation_Request,
+	CAuthentication_PollAuthSessionStatus_Response,
+	CAuthentication_UpdateAuthSessionWithMobileConfirmation_Request,
 	CAuthentication_UpdateAuthSessionWithSteamGuardCode_Request
 } from './protobuf-generated/types';
 import {
 	CheckMachineAuthRequest,
-	CheckMachineAuthResponse, GetAuthSessionInfoRequest, GetAuthSessionInfoResponse, MobileConfirmationRequest,
+	CheckMachineAuthResponse,
+	GetAuthSessionInfoRequest,
+	GetAuthSessionInfoResponse,
+	MobileConfirmationRequest,
 	PollLoginStatusRequest,
 	PollLoginStatusResponse,
 	StartAuthSessionRequest,
 	StartAuthSessionWithCredentialsRequest,
-	StartAuthSessionWithCredentialsResponse, StartAuthSessionWithQrResponse,
+	StartAuthSessionWithCredentialsResponse,
+	StartAuthSessionWithQrResponse,
 	SubmitSteamGuardCodeRequest
 } from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import EventEmitter from 'events';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
+import WebClient from './WebClient';
+
+const debug = createDebug('steam-session:authenticationclient');
 
 interface RequestDefinition {
 	apiInterface: string;
@@ -42,11 +50,13 @@ interface RequestDefinition {
 export default class AuthenticationClient extends EventEmitter {
 	_transport: ITransport;
 	_platformType: EAuthTokenPlatformType;
+	_webClient: WebClient;
 
-	constructor(transport: ITransport, platformType: EAuthTokenPlatformType) {
+	constructor(platformType: EAuthTokenPlatformType, transport: ITransport, webClient: WebClient) {
 		super();
 		this._transport = transport;
 		this._platformType = platformType;
+		this._webClient = webClient;
 	}
 
 	async getRsaKey(accountName: string): Promise<CAuthentication_GetPasswordRSAPublicKey_Response> {
@@ -151,18 +161,13 @@ export default class AuthenticationClient extends EventEmitter {
 			headers.cookie = `steamMachineAuth${details.steamId}=${details.machineAuthToken}`;
 		}
 
-		let requestOptions:AxiosRequestConfig = {
-			method: 'POST',
-			url: 'https://login.steampowered.com/jwt/checkdevice',
-			data: {
-				clientid: details.clientId,
-				steamid: details.steamId
-			},
-			headers
-		};
+		let body = {clientid: details.clientId, steamid: details.steamId};
+		debug('POST https://login.steampowered.com/jwt/checkdevice %o', body);
 
-		let result:AxiosResponse = await axios(requestOptions);
-		return result.data;
+		let result = await this._webClient.postEncoded('https://login.steampowered.com/jwt/checkdevice', body, 'multipart', {
+			headers: API_HEADERS
+		});
+		return result.body;
 	}
 
 	async pollLoginStatus(details: PollLoginStatusRequest): Promise<PollLoginStatusResponse> {

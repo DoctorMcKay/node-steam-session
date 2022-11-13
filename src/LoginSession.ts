@@ -1,13 +1,14 @@
-import axios from 'axios';
+import createDebug from 'debug';
 import EventEmitter from 'events';
 import {randomBytes} from 'crypto';
+import StdLib from '@doctormckay/stdlib';
 import SteamID from 'steamid';
 
 import AuthenticationClient from './AuthenticationClient';
-import ITransport from './transports/ITransport';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import WebApiTransport from './transports/WebApiTransport';
 import {
+	ConstructorOptions,
 	StartLoginSessionWithCredentialsDetails,
 	StartSessionResponse,
 	StartSessionResponseValidAction
@@ -21,6 +22,12 @@ import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 import {API_HEADERS, decodeJwt, eresultError} from './helpers';
+import WebClient from './WebClient';
+import HTTPS from 'https';
+import {SocksProxyAgent} from 'socks-proxy-agent';
+
+const debug = createDebug('steam-session:loginsession');
+
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
@@ -31,6 +38,7 @@ export default class LoginSession extends EventEmitter {
 	_refreshToken?: string;
 
 	_platformType: EAuthTokenPlatformType;
+	_webClient: WebClient;
 	_handler: AuthenticationClient;
 
 	_steamGuardCode?: string;
@@ -44,14 +52,30 @@ export default class LoginSession extends EventEmitter {
 
 	/**
 	 * @param {EAuthTokenPlatformType} platformType
-	 * @param {ITransport} [transport=WebApiTransport]
+	 * @param {ConstructorOptions} [options]
 	 */
-	constructor(platformType: EAuthTokenPlatformType, transport?: ITransport) {
+	constructor(platformType: EAuthTokenPlatformType, options?: ConstructorOptions) {
 		super();
 
+		options = options || {};
+
+		let agent = new HTTPS.Agent({keepAlive: true});
+		if (options.httpProxy && options.socksProxy) {
+			throw new Error('Cannot specify both httpProxy and socksProxy at the same time');
+		}
+
+		if (options.httpProxy) {
+			agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy);
+		} else if (options.socksProxy) {
+			agent = new SocksProxyAgent(options.socksProxy);
+		}
+
+		this._webClient = new WebClient({agent});
+
 		this._platformType = platformType;
-		this._handler = new AuthenticationClient(transport || new WebApiTransport(), this._platformType);
+		this._handler = new AuthenticationClient(this._platformType, options.transport || new WebApiTransport(this._webClient), this._webClient);
 		this._handler.on('debug', (...args) => this.emit('debug-handler', ...args));
+		this.on('debug', debug);
 
 		this.loginTimeout = 30000;
 	}
@@ -436,44 +460,42 @@ export default class LoginSession extends EventEmitter {
 			throw new Error('A refresh token is required to get web cookies');
 		}
 
-		let finalizeResponse = await axios({
-			method: 'POST',
-			url: 'https://login.steampowered.com/jwt/finalizelogin',
-			headers: {'content-type': 'multipart/form-data', ...API_HEADERS},
-			data: {
-				nonce: this.refreshToken,
-				sessionid: randomBytes(12).toString('hex'),
-				redir: 'https://steamcommunity.com/login/home/?goto='
-			}
+		let body = {
+			nonce: this.refreshToken,
+			sessionid: randomBytes(12).toString('hex'),
+			redir: 'https://steamcommunity.com/login/home/?goto='
+		};
+
+		debug('POST https://login.steampowered.com/jwt/finalizelogin %o', body);
+		let finalizeResponse = await this._webClient.postEncoded('https://login.steampowered.com/jwt/finalizelogin', body, 'multipart', {
+			headers: API_HEADERS
 		});
 
-		if (finalizeResponse.data && finalizeResponse.data.error) {
-			throw eresultError(finalizeResponse.data.error);
+		if (finalizeResponse.body && finalizeResponse.body.error) {
+			throw eresultError(finalizeResponse.body.error);
 		}
 
-		if (!finalizeResponse.data || !finalizeResponse.data.transfer_info) {
+		if (!finalizeResponse.body || !finalizeResponse.body.transfer_info) {
 			throw new Error('Malformed login response');
 		}
 
 		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
 		// successful transfer (hence the usage of promsieAny), but we execute them all for robustness in case one fails.
 		// As long as one succeeds, we're good.
-		let transfers = finalizeResponse.data.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
-			let result = await axios({
-				method: 'POST',
-				url,
-				headers: {'content-type': 'multipart/form-data'},
-				data: {steamID: this.steamID.getSteamID64(), ...params}
-			});
-			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
+		let transfers = finalizeResponse.body.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
+			let body = {steamID: this.steamID.getSteamID64(), ...params};
+			debug('POST %s %o', url, body);
+
+			let result = await this._webClient.postEncoded(url, body, 'multipart');
+			if (!result.res.headers || !result.res.headers['set-cookie'] || result.res.headers['set-cookie'].length == 0) {
 				return reject(new Error('No Set-Cookie header in result'));
 			}
 
-			if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
+			if (!result.res.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
 				return reject(new Error('No steamLoginSecure cookie in result'));
 			}
 
-			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
+			resolve(result.res.headers['set-cookie'].map(c => c.split(';')[0].trim()));
 		}));
 
 		return await promiseAny(transfers);

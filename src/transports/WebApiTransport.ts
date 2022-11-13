@@ -1,25 +1,35 @@
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
-import QueryString from 'querystring';
-
+import createDebug from 'debug';
 import ITransport, {ApiRequest, ApiResponse} from './ITransport';
+import WebClient, {ResponseData} from '../WebClient';
 import EResult from '../enums-steam/EResult';
 import {API_HEADERS} from '../helpers';
+
+const debug = createDebug('steam-session:webapitransport');
 
 // Assume everything is a POST request unless it's specifically listed as a GET request
 const GET_REQUESTS = [
 	'IAuthenticationService/GetPasswordRSAPublicKey/v1'
 ];
 
+const WEBAPI_BASE = 'https://api.steampowered.com';
+
+export interface WebApiTransportOptions {
+	httpProxy?: string,
+	socksProxy?: string
+}
+
 export default class WebApiTransport implements ITransport {
+	_client: WebClient;
+
+	constructor(client: WebClient) {
+		this._client = client;
+	}
+
 	async sendRequest(request: ApiRequest): Promise<ApiResponse> {
 		let urlPath = `I${request.apiInterface}Service/${request.apiMethod}/v${request.apiVersion}`;
-
-		let requestOptions:AxiosRequestConfig = {
-			method: GET_REQUESTS.includes(urlPath) ? 'GET' : 'POST',
-			url: `https://api.steampowered.com/${urlPath}`,
-			headers: {...API_HEADERS, ...(request.headers || {})},
-			responseType: 'arraybuffer'
-		};
+		let url = `${WEBAPI_BASE}/${urlPath}/`;
+		let method = GET_REQUESTS.includes(urlPath) ? 'GET' : 'POST';
+		let headers = {...API_HEADERS, ...(request.headers || {})};
 
 		let queryString:any = {};
 		let form:any = {};
@@ -29,23 +39,30 @@ export default class WebApiTransport implements ITransport {
 		}
 
 		if (request.requestData && request.requestData.length > 0) {
-			(requestOptions.method == 'GET' ? queryString : form).input_protobuf_encoded = request.requestData.toString('base64');
+			(method == 'GET' ? queryString : form).input_protobuf_encoded = request.requestData.toString('base64');
 		}
 
-		if (Object.keys(queryString).length > 0) {
-			requestOptions.url += '?' + QueryString.stringify(queryString);
+		debug('%s %s %o %o', method, url, queryString, form);
+
+		let result:ResponseData;
+		if (method == 'GET') {
+			result = await this._client.get(url, {queryString, headers});
+		} else if (Object.keys(form).length == 0) {
+			result = await this._client.post(url, null, {queryString, headers});
+		} else {
+			result = await this._client.postEncoded(url, form, 'multipart', {queryString, headers});
 		}
 
-		if (Object.keys(form).length > 0) {
-			requestOptions.headers['content-type'] = 'multipart/form-data';
-			requestOptions.data = form;
+		if (result.res.statusCode < 200 || result.res.statusCode >= 300) {
+			let err:any = new Error(`WebAPI error ${result.res.statusCode}`);
+			err.code = result.res.statusCode;
+			throw err;
 		}
 
-		let result:AxiosResponse = await axios(requestOptions);
 		let apiResponse:ApiResponse = {};
 
-		let eresultHeader = result.headers['x-eresult'];
-		let errorMessageHeader = result.headers['x-error_message'];
+		let eresultHeader = result.res.headers['x-eresult'];
+		let errorMessageHeader = result.res.headers['x-error_message'];
 
 		if (typeof eresultHeader == 'string') {
 			apiResponse.result = parseInt(eresultHeader) as EResult;
@@ -55,8 +72,8 @@ export default class WebApiTransport implements ITransport {
 			apiResponse.errorMessage = errorMessageHeader;
 		}
 
-		if (result.data && result.data.length > 0) {
-			apiResponse.responseData = result.data;
+		if (result.body && result.body.length > 0) {
+			apiResponse.responseData = result.body;
 		}
 
 		return apiResponse;

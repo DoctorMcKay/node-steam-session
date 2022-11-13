@@ -1,24 +1,41 @@
-import SteamID from 'steamid';
 import {createHmac} from 'crypto';
+import HTTPS from 'https';
+import {SocksProxyAgent} from 'socks-proxy-agent';
+import StdLib from '@doctormckay/stdlib';
+import SteamID from 'steamid';
 
-import ITransport from './transports/ITransport';
 import AuthenticationClient from './AuthenticationClient';
 import WebApiTransport from './transports/WebApiTransport';
-import {ApproveAuthSessionRequest, AuthSessionInfo} from './interfaces-external';
+import {ApproveAuthSessionRequest, AuthSessionInfo, ConstructorOptions} from './interfaces-external';
 import {decodeJwt} from './helpers';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
+import WebClient from './WebClient';
 
 export default class LoginApprover {
 	_accessToken: string;
 	sharedSecret: string|Buffer;
 
+	_webClient: WebClient;
 	_handler: AuthenticationClient;
 
-	constructor(accessToken: string, sharedSecret: string|Buffer, transport?: ITransport) {
+	constructor(accessToken: string, sharedSecret: string|Buffer, options?: ConstructorOptions) {
+		let agent = new HTTPS.Agent({keepAlive: true});
+		if (options.httpProxy && options.socksProxy) {
+			throw new Error('Cannot specify both httpProxy and socksProxy at the same time');
+		}
+
+		if (options.httpProxy) {
+			agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy);
+		} else if (options.socksProxy) {
+			agent = new SocksProxyAgent(options.socksProxy);
+		}
+
+		this._webClient = new WebClient({agent});
+
 		this.accessToken = accessToken;
 		this.sharedSecret = sharedSecret;
-		this._handler = new AuthenticationClient(transport || new WebApiTransport(), EAuthTokenPlatformType.MobileApp);
+		this._handler = new AuthenticationClient(EAuthTokenPlatformType.MobileApp, options.transport || new WebApiTransport(this._webClient), this._webClient);
 	}
 
 	get steamID(): SteamID {
