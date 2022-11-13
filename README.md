@@ -221,11 +221,14 @@ event is emitted.
 
 ## Methods
 
-### Constructor(platformType[, transport])
+### Constructor(platformType[, options])
 - `platformType` - A value from [`EAuthTokenPlatformType`](#eauthtokenplatformtype). You should set this to the
 	appropriate platform type for your desired usage.
-- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
-	If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+- `options` - An object with zero or more of these properties:
+	- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
+		If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+    - `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
+    - `socksProxy` A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
 
 Constructs a new `LoginSession` instance. Example usage:
 
@@ -450,8 +453,11 @@ If this is a `string`, it must be either hex- or base64-encoded.
   access token (**not refresh token**) must have been created using the `MobileApp` platform type.
 - `sharedSecret` - A `string` or `Buffer` containing your account's TOTP shared secret. If this is a string, it must be
   hex- or base64-encoded.
-- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
-  If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+- `options` - An object with zero or more of these properties:
+	- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
+	  If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+	- `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
+	- `socksProxy` A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
 
 Constructs a new `LoginApprover` instance. Example usage:
 
