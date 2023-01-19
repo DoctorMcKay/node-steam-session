@@ -5,15 +5,12 @@ const fetch = require("node-fetch");
 const config = {
     "accountName":  "username",
     "password":     "password",
-    "sharedSecret": "shared secret",
+    "sharedSecret": "shared_secret",
 };
 
 async function loginToSteamPartner(session) {
     // We can also get web cookies now that we've negotiated a session
     let webCookies = await session.getWebCookies();
-    console.log("Web session cookies:");
-    console.log(webCookies);
-
     let body = await fetch("https://partner.steamgames.com/", {
         "headers": {
             "Cookie":                    webCookies.join("; "),
@@ -28,7 +25,7 @@ async function loginToSteamPartner(session) {
         },
     }).then((res) => res.text());
 
-    console.log("Are we logged in?", body.includes("javascript:Logout()"));
+    console.log("Authenticated to partner site?", body.includes("javascript:Logout()"));
 }
 
 (async() => {
@@ -39,7 +36,7 @@ async function loginToSteamPartner(session) {
         password,
     });
 
-    if (startResult.actionRequired && startResult.validActions.includes(EAuthSessionGuardType.DeviceCode)) {
+    if (startResult.actionRequired && startResult.validActions.find(({ type }) => type === EAuthSessionGuardType.DeviceCode)) {
         let code = generateAuthCode(sharedSecret);
         await session.submitSteamGuardCode(code);
     } else if (startResult.actionRequired) {
