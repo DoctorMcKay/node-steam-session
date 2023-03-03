@@ -31,7 +31,7 @@ Node.js v12.22.0 or later is required to use this module.
         - [refreshToken](#refreshtoken)
         - [steamGuardMachineToken](#steamguardmachinetoken)
     - [Methods](#methods)
-		- [Constructor(platformType\[, transport\])](#constructorplatformtype-transport)
+		- [Constructor(platformType\[, options\])](#constructorplatformtype-options)
         - [startWithCredentials(details)](#startwithcredentialsdetails)
         - [startWithQR()](#startwithqr)
         - [submitSteamGuardCode(authCode)](#submitsteamguardcodeauthcode)
@@ -51,7 +51,7 @@ Node.js v12.22.0 or later is required to use this module.
         - [accessToken](#accesstoken-1)
         - [sharedSecret](#sharedsecret)
     - [Methods](#methods-1)
-        - [Constructor(accessToken, sharedSecret\[, transport\])](#constructoraccesstoken-sharedsecret-transport)
+        - [Constructor(accessToken, sharedSecret\[, options\])](#constructoraccesstoken-sharedsecret-options)
         - [getAuthSessionInfo(qrChallengeUrl)](#getauthsessioninfoqrchallengeurl)
         - [approveAuthSession(details)](#approveauthsessiondetails)
 
