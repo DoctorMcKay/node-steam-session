@@ -1,6 +1,6 @@
 {
 	"name": "steam-session",
-	"version": "0.0.3-alpha",
+	"version": "0.0.4-alpha",
 	"description": "Enables authenticating with Steam",
 	"keywords": [
 		"steam"
@@ -33,7 +33,9 @@
 		"node-bignumber": "^1.2.2",
 		"protobufjs": "^7.1.0",
 		"socks-proxy-agent": "^7.0.0",
-		"steamid": "^2.0.0"
+		"steamid": "^2.0.0",
+		"vdf": "^0.0.2",
+		"websocket13": "^2.2.0"
 	},
 	"devDependencies": {
 		"@types/node": "^12.20.55",

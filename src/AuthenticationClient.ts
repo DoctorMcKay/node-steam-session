@@ -272,4 +272,8 @@ export default class AuthenticationClient extends EventEmitter {
 		let decodedData = responseProto.decode(responseData);
 		return responseProto.toObject(decodedData, {longs: String});
 	}
+
+	close(): void {
+		this._transport.close();
+	}
 }

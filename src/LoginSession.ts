@@ -22,6 +22,7 @@ import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 import {API_HEADERS, decodeJwt, eresultError} from './helpers';
+import WebSocketCMTransport from './transports/WebSocketCMTransport';
 import WebClient from './WebClient';
 import HTTPS from 'https';
 import {SocksProxyAgent} from 'socks-proxy-agent';
@@ -73,7 +74,20 @@ export default class LoginSession extends EventEmitter {
 		this._webClient = new WebClient({agent});
 
 		this._platformType = platformType;
-		this._handler = new AuthenticationClient(this._platformType, options.transport || new WebApiTransport(this._webClient), this._webClient);
+
+		let transport = options.transport;
+		if (!transport) {
+			switch (platformType) {
+				case EAuthTokenPlatformType.SteamClient:
+					transport = new WebSocketCMTransport();
+					break;
+
+				default:
+					transport = new WebApiTransport(this._webClient);
+			}
+		}
+
+		this._handler = new AuthenticationClient(this._platformType, transport, this._webClient);
 		this._handler.on('debug', (...args) => this.emit('debug-handler', ...args));
 		this.on('debug', debug);
 
@@ -446,6 +460,7 @@ export default class LoginSession extends EventEmitter {
 
 	cancelLoginAttempt(): boolean {
 		this._pollingCanceled = true;
+		this._handler.close();
 
 		if (this._pollTimer) {
 			clearTimeout(this._pollTimer);
