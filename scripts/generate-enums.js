@@ -5,6 +5,7 @@ const Path = require('path');
 const ENUMS = [
 	'EAuthSessionGuardType',
 	'EAuthTokenPlatformType',
+	'EMsg',
 	'EResult',
 	'ESessionPersistence',
 	'EOSType',
