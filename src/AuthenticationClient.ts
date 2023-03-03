@@ -13,17 +13,22 @@ import {
 	CAuthentication_GetAuthSessionInfo_Response,
 	CAuthentication_GetPasswordRSAPublicKey_Response,
 	CAuthentication_PollAuthSessionStatus_Request,
-	CAuthentication_PollAuthSessionStatus_Response, CAuthentication_UpdateAuthSessionWithMobileConfirmation_Request,
+	CAuthentication_PollAuthSessionStatus_Response,
+	CAuthentication_UpdateAuthSessionWithMobileConfirmation_Request,
 	CAuthentication_UpdateAuthSessionWithSteamGuardCode_Request
 } from './protobuf-generated/types';
 import {
 	CheckMachineAuthRequest,
-	CheckMachineAuthResponse, GetAuthSessionInfoRequest, GetAuthSessionInfoResponse, MobileConfirmationRequest,
+	CheckMachineAuthResponse,
+	GetAuthSessionInfoRequest,
+	GetAuthSessionInfoResponse,
+	MobileConfirmationRequest,
 	PollLoginStatusRequest,
 	PollLoginStatusResponse,
 	StartAuthSessionRequest,
 	StartAuthSessionWithCredentialsRequest,
-	StartAuthSessionWithCredentialsResponse, StartAuthSessionWithQrResponse,
+	StartAuthSessionWithCredentialsResponse,
+	StartAuthSessionWithQrResponse,
 	SubmitSteamGuardCodeRequest
 } from './interfaces-internal';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
@@ -266,5 +271,9 @@ export default class AuthenticationClient extends EventEmitter {
 		let responseData = result.responseData && result.responseData.length > 0 ? result.responseData : Buffer.alloc(0);
 		let decodedData = responseProto.decode(responseData);
 		return responseProto.toObject(decodedData, {longs: String});
+	}
+
+	close(): void {
+		this._transport.close();
 	}
 }

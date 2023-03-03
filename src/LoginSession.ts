@@ -21,6 +21,7 @@ import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 import {API_HEADERS, decodeJwt, eresultError} from './helpers';
+import WebSocketCMTransport from './transports/WebSocketCMTransport';
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
@@ -50,7 +51,19 @@ export default class LoginSession extends EventEmitter {
 		super();
 
 		this._platformType = platformType;
-		this._handler = new AuthenticationClient(transport || new WebApiTransport(), this._platformType);
+
+		if (!transport) {
+			switch (platformType) {
+				case EAuthTokenPlatformType.SteamClient:
+					transport = new WebSocketCMTransport();
+					break;
+
+				default:
+					transport = new WebApiTransport();
+			}
+		}
+
+		this._handler = new AuthenticationClient(transport, this._platformType);
 		this._handler.on('debug', (...args) => this.emit('debug-handler', ...args));
 
 		this.loginTimeout = 30000;
@@ -422,6 +435,7 @@ export default class LoginSession extends EventEmitter {
 
 	cancelLoginAttempt(): boolean {
 		this._pollingCanceled = true;
+		this._handler.close();
 
 		if (this._pollTimer) {
 			clearTimeout(this._pollTimer);

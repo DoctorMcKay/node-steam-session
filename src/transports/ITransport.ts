@@ -16,5 +16,16 @@ export interface ApiResponse {
 }
 
 export default interface ITransport {
+    /**
+     * Sends a request to Steam.
+     *
+     * @param {ApiRequest} request
+     * @return {Promise<ApiResponse>}
+     */
     sendRequest(request: ApiRequest): Promise<ApiResponse>;
+
+    /**
+     * Cleans up any resources allocated by the transport.
+     */
+    close(): void;
 }

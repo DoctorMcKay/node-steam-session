@@ -61,4 +61,6 @@ export default class WebApiTransport implements ITransport {
 
 		return apiResponse;
 	}
+
+	close() {}
 }
