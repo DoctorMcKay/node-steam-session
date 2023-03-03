@@ -31,7 +31,7 @@ interface CmServer {
 export default class WebSocketCMTransport implements ITransport {
 	_websocket: any;
 	_jobs: any;
-    _clientSessionId: number = 0;
+	_clientSessionId = 0;
 
 	constructor() {
 		this._websocket = null;
@@ -99,7 +99,7 @@ export default class WebSocketCMTransport implements ITransport {
 				this._websocket.on('connected', async () => {
 					debug(`Connected to ${cm.endpoint}`);
 
-					let hello:CMsgClientHello = {protocol_version: PROTOCOL_VERSION};
+					let hello: CMsgClientHello = {protocol_version: PROTOCOL_VERSION};
 					// @ts-ignore
 					await this._sendMessage(EMsg.ClientHello, Protos.CMsgClientHello.encode(hello).finish());
 
@@ -142,7 +142,7 @@ export default class WebSocketCMTransport implements ITransport {
 			headers: {
 				'user-agent': 'Valve/Steam HTTP Client 1.0',
 				'accept-charset': 'ISO-8859-1,utf-8,*;q=0.7',
-				'accept': 'text/html,*/*;q=0.9'
+				accept: 'text/html,*/*;q=0.9'
 			},
 			responseType: 'text'
 		};
@@ -204,10 +204,10 @@ export default class WebSocketCMTransport implements ITransport {
 		}
 
 		if (protoHeader.jobid_target && this._jobs[protoHeader.jobid_target]) {
-			let {resolve, reject} = this._jobs[protoHeader.jobid_target];
+			let {resolve} = this._jobs[protoHeader.jobid_target];
 			delete this._jobs[protoHeader.jobid_target];
 
-			let response:ApiResponse = {
+			let response: ApiResponse = {
 				result: protoHeader.eresult,
 				errorMessage: protoHeader.error_message,
 				responseData: msgBody
@@ -223,7 +223,7 @@ export default class WebSocketCMTransport implements ITransport {
 				// @ts-ignore
 				let decodedLogOnResponse = Protos.CMsgClientLogonResponse.decode(msgBody);
 				// @ts-ignore
-				let logOnResponse:CMsgClientLogonResponse = Protos.CMsgClientLogonResponse.toObject(decodedLogOnResponse, {longs: String});
+				let logOnResponse: CMsgClientLogonResponse = Protos.CMsgClientLogonResponse.toObject(decodedLogOnResponse, {longs: String});
 				debug(`Received ClientLogOnResponse with result: ${EResult[logOnResponse.eresult] || logOnResponse.eresult}`);
 
 				if (this._websocket.state == WS13.State.Connected) {
@@ -232,13 +232,14 @@ export default class WebSocketCMTransport implements ITransport {
 				}
 
 				for (let i in this._jobs) {
-					let {_, reject} = this._jobs[i];
+					let {reject} = this._jobs[i];
 					reject(eresultError(logOnResponse.eresult));
 				}
 				break;
 
 			case EMsg.Multi:
-				this._processMultiMsg(msgBody).then(() => {});
+				// noinspection JSIgnoredPromiseFromCall
+				this._processMultiMsg(msgBody);
 				break;
 
 			default:
@@ -250,7 +251,7 @@ export default class WebSocketCMTransport implements ITransport {
 		// @ts-ignore
 		let decodedBody = Protos.CMsgMulti.decode(body);
 		// @ts-ignore
-		let multi:CMsgMulti = Protos.CMsgMulti.toObject(decodedBody, {longs: String});
+		let multi: CMsgMulti = Protos.CMsgMulti.toObject(decodedBody, {longs: String});
 
 		let payload = multi.message_body;
 
@@ -279,29 +280,29 @@ export default class WebSocketCMTransport implements ITransport {
 			await this._connectToCM();
 		}
 
-        return await new Promise((resolve, reject) => {
-            let protoHeader: CMsgProtoBufHeader = {
-                steamid: '0',
-                client_sessionid: this._clientSessionId,
-            };
+		return await new Promise((resolve, reject) => {
+			let protoHeader: CMsgProtoBufHeader = {
+				steamid: '0',
+				client_sessionid: this._clientSessionId,
+			};
 
-            if (eMsg == EMsg.ServiceMethodCallFromClientNonAuthed) {
-                let jobIdBuffer = randomBytes(8);
-                jobIdBuffer[0] &= 0x7f; // make sure it's always a positive value
-                let jobId = jobIdBuffer.readBigInt64BE(0).toString(10);
+			if (eMsg == EMsg.ServiceMethodCallFromClientNonAuthed) {
+				let jobIdBuffer = randomBytes(8);
+				jobIdBuffer[0] &= 0x7f; // make sure it's always a positive value
+				let jobId = jobIdBuffer.readBigInt64BE(0).toString(10);
 
-                protoHeader.jobid_source = jobId;
-                protoHeader.target_job_name = serviceMethodName;
-                protoHeader.realm = 1;
+				protoHeader.jobid_source = jobId;
+				protoHeader.target_job_name = serviceMethodName;
+				protoHeader.realm = 1;
 
-                this._jobs[jobId] = {resolve, reject};
-            } else {
-                // There's no response, so just resolve right now
-                resolve(undefined);
-            }
+				this._jobs[jobId] = {resolve, reject};
+			} else {
+				// There's no response, so just resolve right now
+				resolve(undefined);
+			}
 
-            // @ts-ignore
-			let encodedProtoHeader:Buffer = Protos.CMsgProtoBufHeader.encode(protoHeader).finish();
+			// @ts-ignore
+			let encodedProtoHeader: Buffer = Protos.CMsgProtoBufHeader.encode(protoHeader).finish();
 			let header = Buffer.alloc(8);
 			header.writeUInt32LE(((eMsg as number) | PROTO_MASK) >>> 0, 0);
 			header.writeUInt32LE(encodedProtoHeader.length, 4);
@@ -312,6 +313,6 @@ export default class WebSocketCMTransport implements ITransport {
 				encodedProtoHeader,
 				body
 			]));
-        });
+		});
 	}
 }

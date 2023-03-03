@@ -62,5 +62,6 @@ export default class WebApiTransport implements ITransport {
 		return apiResponse;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	close() {}
 }
