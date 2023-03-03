@@ -148,9 +148,11 @@ Contains possible persistence levels for auth sessions.
 
 ## Custom Transports
 
-It's possible to define a custom transport to be used when interacting with the Steam login server. By default, the
-standard `WebApiTransport` will be used to interact with the Steam login server using api.steampowered.com. **It is very
-likely that you won't need to mess with this.**
+It's possible to define a custom transport to be used when interacting with the Steam login server. The default transport
+used to interact with the Steam login server is chosen depending on your provided [EAuthTokenPlatformType](#eauthtokenplatformtype).
+For the `SteamClient` platform type, a `WebSocketCMTransport` will be used to communicate with a CM server using a WebSocket.
+For other platform types, a `WebApiTransport` will be used to interact with the Steam login server using  api.steampowered.com.
+**It is very likely that you won't need to mess with this.**
 
 Everything in this category is TypeScript interfaces, so even if you're implementing a custom transport, you don't need
 these unless you're using TypeScript.
@@ -225,7 +227,8 @@ event is emitted.
 - `platformType` - A value from [`EAuthTokenPlatformType`](#eauthtokenplatformtype). You should set this to the
 	appropriate platform type for your desired usage.
 - `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
-	If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+	If omitted, defaults to a `WebSocketCMTransport` instance for `SteamClient` platform types, and a 
+	`WebApiTransport` instance for all other platform types. In all likelihood, you don't need to use this.
 
 Constructs a new `LoginSession` instance. Example usage:
 
