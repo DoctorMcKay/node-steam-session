@@ -28,10 +28,11 @@
 		"generate-protos": "node scripts/generate-protos.js"
 	},
 	"dependencies": {
-		"axios": "^0.27.2",
+		"@doctormckay/stdlib": "^1.15.0",
 		"debug": "^4.3.4",
 		"node-bignumber": "^1.2.2",
 		"protobufjs": "^7.1.0",
+		"socks-proxy-agent": "^7.0.0",
 		"steamid": "^2.0.0",
 		"vdf": "^0.0.2",
 		"websocket13": "^2.2.0"

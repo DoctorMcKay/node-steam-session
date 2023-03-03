@@ -1,6 +1,5 @@
-import axios, {AxiosRequestConfig, AxiosResponse} from 'axios';
 import {randomBytes} from 'crypto';
-import Debug from 'debug';
+import createDebug from 'debug';
 import VDF from 'vdf';
 import WS13 from 'websocket13';
 import Zlib from 'zlib';
@@ -11,8 +10,10 @@ import Protos from '../protobuf-generated/load';
 import {CMsgClientHello, CMsgClientLogonResponse, CMsgMulti, CMsgProtoBufHeader} from '../protobuf-generated/types';
 import EResult from '../enums-steam/EResult';
 import {eresultError} from '../helpers';
+import WebClient from '../WebClient';
+import {Agent} from 'https';
 
-const debug = Debug('steam-session:WebSocketCMTransport');
+const debug = createDebug('steam-session:WebSocketCMTransport');
 const debugVerbose = debug.extend('verbose');
 
 const PROTOCOL_VERSION = 65580;
@@ -29,11 +30,15 @@ interface CmServer {
 }
 
 export default class WebSocketCMTransport implements ITransport {
+	_webClient: WebClient;
+	_agent: Agent;
 	_websocket: any;
 	_jobs: any;
 	_clientSessionId = 0;
 
-	constructor() {
+	constructor(webClient: WebClient, agent: Agent) {
+		this._webClient = webClient;
+		this._agent = agent;
 		this._websocket = null;
 		this._jobs = {};
 	}
@@ -94,7 +99,11 @@ export default class WebSocketCMTransport implements ITransport {
 				debug(`Connecting to ${cm.endpoint}`);
 
 				let resolved = false;
-				this._websocket = new WS13.WebSocket(`wss://${cm.endpoint}/cmsocket/`);
+				this._websocket = new WS13.WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
+					connection: {
+						agent: this._agent
+					}
+				});
 
 				this._websocket.on('connected', async () => {
 					debug(`Connected to ${cm.endpoint}`);
@@ -136,23 +145,21 @@ export default class WebSocketCMTransport implements ITransport {
 	async _fetchCMList(): Promise<CmServer[]> {
 		debug('Fetching CM list');
 
-		let requestOptions: AxiosRequestConfig = {
-			method: 'GET',
-			url: 'https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf',
+		let result = await this._webClient.get('https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf', {
 			headers: {
 				'user-agent': 'Valve/Steam HTTP Client 1.0',
 				'accept-charset': 'ISO-8859-1,utf-8,*;q=0.7',
 				accept: 'text/html,*/*;q=0.9'
-			},
-			responseType: 'text'
-		};
+			}
+		});
 
-		let result: AxiosResponse = await axios(requestOptions);
-		if (result.status != 200) {
-			throw new Error('Unable to fetch CM list');
+		if (result.res.statusCode != 200) {
+			let err:any = new Error('Unable to fetch CM list');
+			err.code = result.res.statusCode;
+			throw err;
 		}
 
-		let parsedResult = VDF.parse(result.data);
+		let parsedResult = VDF.parse(result.body);
 		if (!parsedResult.response || !parsedResult.response.serverlist) {
 			throw new Error('Malformed CM list response');
 		}
@@ -307,7 +314,7 @@ export default class WebSocketCMTransport implements ITransport {
 			header.writeUInt32LE(((eMsg as number) | PROTO_MASK) >>> 0, 0);
 			header.writeUInt32LE(encodedProtoHeader.length, 4);
 
-			debugVerbose(`Send: ${EMsg[eMsg] || eMsg}`);
+			debugVerbose(`Send: ${EMsg[eMsg] || eMsg} (${serviceMethodName})`);
 			this._websocket.send(Buffer.concat([
 				header,
 				encodedProtoHeader,

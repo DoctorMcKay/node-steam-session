@@ -2,6 +2,8 @@ import {createInterface} from 'readline';
 import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from '../src'; // use the following line if you installed the module from npm
 //import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from 'steam-session';
 
+const SOCKS_PROXY_URL = 'socks5://127.0.0.1:8888';
+
 // Create a variable where we can store an abort function to cancel stdin input
 let g_AbortPromptFunc;
 
@@ -16,7 +18,7 @@ async function main() {
 	let steamGuardMachineToken = await promptAsync('Machine Token: ');
 
 	// Create our LoginSession and start a login session using our credentials. This session will be for a client login.
-	let session = new LoginSession(EAuthTokenPlatformType.SteamClient);
+	let session = new LoginSession(EAuthTokenPlatformType.SteamClient, {socksProxy: SOCKS_PROXY_URL});
 	let startResult = await session.startWithCredentials({
 		accountName,
 		password,
@@ -86,6 +88,9 @@ async function main() {
 		let webCookies = await session.getWebCookies();
 		console.log('Web session cookies:');
 		console.log(webCookies);
+
+		let decodedJwt = decodeJwt(session.accessToken);
+		console.log(`\nWe logged in using IP ${decodedJwt.ip_subject}`);
 	});
 
 	session.on('timeout', () => {
@@ -143,4 +148,16 @@ function abortPrompt() {
 
 	g_AbortPromptFunc();
 	process.stdout.write('\n');
+}
+
+function decodeJwt(jwt:string): any {
+	let parts = jwt.split('.');
+	if (parts.length != 3) {
+		throw new Error('Invalid JWT');
+	}
+
+	let standardBase64 = parts[1].replace(/-/g, '+')
+		.replace(/_/g, '/');
+
+	return JSON.parse(Buffer.from(standardBase64, 'base64').toString('utf8'));
 }
