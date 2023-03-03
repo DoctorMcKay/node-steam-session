@@ -37,7 +37,7 @@ import EventEmitter from 'events';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import WebClient from './WebClient';
 
-const debug = createDebug('steam-session:authenticationclient');
+const debug = createDebug('steam-session:AuthenticationClient');
 
 interface RequestDefinition {
 	apiInterface: string;

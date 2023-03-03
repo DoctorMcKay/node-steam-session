@@ -1,12 +1,18 @@
+import StdLib from '@doctormckay/stdlib';
+import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import EventEmitter from 'events';
-import {randomBytes} from 'crypto';
-import StdLib from '@doctormckay/stdlib';
+import HTTPS from 'https';
+import {SocksProxyAgent} from 'socks-proxy-agent';
 import SteamID from 'steamid';
 
 import AuthenticationClient from './AuthenticationClient';
-import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
+import {API_HEADERS, decodeJwt, eresultError} from './helpers';
+import WebClient from './WebClient';
+
 import WebApiTransport from './transports/WebApiTransport';
+import WebSocketCMTransport from './transports/WebSocketCMTransport';
+
 import {
 	ConstructorOptions,
 	StartLoginSessionWithCredentialsDetails,
@@ -18,16 +24,13 @@ import {
 	StartAuthSessionWithCredentialsResponse,
 	StartAuthSessionWithQrResponse
 } from './interfaces-internal';
-import ESessionPersistence from './enums-steam/ESessionPersistence';
-import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
-import EResult from './enums-steam/EResult';
-import {API_HEADERS, decodeJwt, eresultError} from './helpers';
-import WebSocketCMTransport from './transports/WebSocketCMTransport';
-import WebClient from './WebClient';
-import HTTPS from 'https';
-import {SocksProxyAgent} from 'socks-proxy-agent';
 
-const debug = createDebug('steam-session:loginsession');
+import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
+import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
+import EResult from './enums-steam/EResult';
+import ESessionPersistence from './enums-steam/ESessionPersistence';
+
+const debug = createDebug('steam-session:LoginSession');
 
 import Timeout = NodeJS.Timeout;
 
@@ -79,7 +82,7 @@ export default class LoginSession extends EventEmitter {
 		if (!transport) {
 			switch (platformType) {
 				case EAuthTokenPlatformType.SteamClient:
-					transport = new WebSocketCMTransport();
+					transport = new WebSocketCMTransport(this._webClient, agent);
 					break;
 
 				default:

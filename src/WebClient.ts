@@ -5,7 +5,7 @@ import {IncomingMessage, OutgoingHttpHeaders} from 'http';
 import {Readable as ReadableStream} from 'stream';
 import {randomBytes} from 'crypto';
 
-const debug = createDebug('steam-session:webclient');
+const debug = createDebug('steam-session:WebClient');
 
 export interface WebClientOptions {
 	agent?: HTTPS.Agent;

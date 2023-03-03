@@ -4,7 +4,7 @@ import WebClient, {ResponseData} from '../WebClient';
 import EResult from '../enums-steam/EResult';
 import {API_HEADERS} from '../helpers';
 
-const debug = createDebug('steam-session:webapitransport');
+const debug = createDebug('steam-session:WebApiTransport');
 
 // Assume everything is a POST request unless it's specifically listed as a GET request
 const GET_REQUESTS = [
