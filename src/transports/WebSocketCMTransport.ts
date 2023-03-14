@@ -30,6 +30,7 @@ interface CmServer {
 }
 
 export default class WebSocketCMTransport implements ITransport {
+	_connectTimeout = 1000;
 	_webClient: WebClient;
 	_agent: Agent;
 	_websocket: any;
@@ -105,7 +106,22 @@ export default class WebSocketCMTransport implements ITransport {
 					}
 				});
 
+				this._websocket.setTimeout(this._connectTimeout);
+				this._websocket.on('timeout', () => {
+					if (resolved) {
+						return;
+					}
+
+					debug(`Connecting to ${cm.endpoint} timed out after ${this._connectTimeout} ms`);
+					this._connectTimeout = Math.min(10000, this._connectTimeout * 2);
+
+					this._websocket.disconnect();
+					this._connectToCM().then(resolve).catch(reject);
+				});
+
 				this._websocket.on('connected', async () => {
+					this._websocket.setTimeout(0);
+
 					debug(`Connected to ${cm.endpoint}`);
 
 					let hello: CMsgClientHello = {protocol_version: PROTOCOL_VERSION};
