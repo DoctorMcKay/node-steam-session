@@ -211,7 +211,8 @@ export default class WebSocketCMTransport implements ITransport {
 		}
 
 		if (protoHeader.jobid_target && this._jobs[protoHeader.jobid_target]) {
-			let {resolve} = this._jobs[protoHeader.jobid_target];
+			let {resolve, timeout} = this._jobs[protoHeader.jobid_target];
+			clearTimeout(timeout);
 			delete this._jobs[protoHeader.jobid_target];
 
 			let response: ApiResponse = {
@@ -239,7 +240,8 @@ export default class WebSocketCMTransport implements ITransport {
 				}
 
 				for (let i in this._jobs) {
-					let {reject} = this._jobs[i];
+					let {reject, timeout} = this._jobs[i];
+					clearTimeout(timeout);
 					reject(eresultError(logOnResponse.eresult));
 				}
 				break;
@@ -302,7 +304,11 @@ export default class WebSocketCMTransport implements ITransport {
 				protoHeader.target_job_name = serviceMethodName;
 				protoHeader.realm = 1;
 
-				this._jobs[jobId] = {resolve, reject};
+				let timeout = setTimeout(() => {
+					reject(new Error(`Request ${serviceMethodName} timed out`));
+				}, 2000);
+
+				this._jobs[jobId] = {resolve, reject, timeout};
 			} else {
 				// There's no response, so just resolve right now
 				resolve(undefined);
