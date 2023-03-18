@@ -124,7 +124,7 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 	}
 }
 
-function getSpoofedHostname() {
+export function getSpoofedHostname() {
 	let hash = createHash('sha1');
 	hash.update(hostname());
 	let sha1 = hash.digest();
