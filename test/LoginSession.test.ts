@@ -1,3 +1,4 @@
+import {randomBytes} from 'crypto';
 import {describe, expect, test} from '@jest/globals';
 import {b64tohex, Key as RSAKey} from 'node-bignumber';
 import {getAuthCode} from 'steam-totp';
@@ -14,14 +15,12 @@ import {
 } from '../src';
 import {createTokenPair, protobufDecodeRequest} from './src/helpers';
 import {getSpoofedHostname} from '../src/helpers';
-import {randomBytes} from 'crypto';
 import {
 	CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
 	CAuthentication_GetPasswordRSAPublicKey_Response,
 	CAuthentication_PollAuthSessionStatus_Response
 } from '../src/protobuf-generated/types';
-import {emit} from 'cluster';
 
 describe('LoginSession tests', () => {
 	test('full LoginSession flow', async () => {
