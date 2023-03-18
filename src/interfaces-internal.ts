@@ -28,7 +28,7 @@ export interface StartAuthSessionWithCredentialsRequest extends StartAuthSession
 	keyTimestamp: string;
 	persistence: ESessionPersistence;
 	platformType: EAuthTokenPlatformType;
-	steamGuardMachineToken?: string;
+	steamGuardMachineToken?: string|Buffer;
 }
 
 export interface StartAuthSessionWithCredentialsResponse extends StartAuthSessionResponse {

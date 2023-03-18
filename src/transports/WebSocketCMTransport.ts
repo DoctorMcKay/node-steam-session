@@ -292,7 +292,7 @@ export default class WebSocketCMTransport implements ITransport {
 		return await new Promise((resolve, reject) => {
 			let protoHeader: CMsgProtoBufHeader = {
 				steamid: '0',
-				client_sessionid: this._clientSessionId,
+				client_sessionid: eMsg != EMsg.ServiceMethodCallFromClientNonAuthed ? this._clientSessionId : 0,
 			};
 
 			if (eMsg == EMsg.ServiceMethodCallFromClientNonAuthed) {
@@ -321,6 +321,7 @@ export default class WebSocketCMTransport implements ITransport {
 			header.writeUInt32LE(encodedProtoHeader.length, 4);
 
 			debugVerbose(`Send: ${EMsg[eMsg] || eMsg} (${serviceMethodName})`);
+
 			this._websocket.send(Buffer.concat([
 				header,
 				encodedProtoHeader,

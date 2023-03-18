@@ -215,7 +215,10 @@ export default class LoginSession extends EventEmitter {
 
 		this._hadRemoteInteraction = false;
 		this._steamGuardCode = details.steamGuardCode;
-		this._steamGuardMachineToken = details.steamGuardMachineToken;
+
+		if (typeof details.steamGuardMachineToken == 'string') {
+			this._steamGuardMachineToken = details.steamGuardMachineToken;
+		}
 
 		let encryptionResult = await this._handler.encryptPassword(details.accountName, details.password);
 
@@ -224,7 +227,8 @@ export default class LoginSession extends EventEmitter {
 			...encryptionResult,
 			persistence: details.persistence || ESessionPersistence.Persistent,
 			platformType: this._platformType,
-			steamGuardMachineToken: this.steamGuardMachineToken
+			// use a manually-specified token with priority over a token saved on this object
+			steamGuardMachineToken: details.steamGuardMachineToken || this.steamGuardMachineToken
 		});
 
 		this.emit('debug', 'start session response', this._startSessionResponse);
