@@ -253,6 +253,26 @@ let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
 
 Starts a new login attempt using your account credentials. Returns a Promise.
 
+If you're logging in with `EAuthTokenPlatformType.SteamClient`, you can supply a Buffer containing the SHA-1 hash of
+your sentry file for `steamGuardMachineToken`. For example:
+
+```js
+import {createHash} from 'crypto';
+import {readFileSync} from 'fs';
+import {LoginSession, EAuthTokenPlatformType} from 'steam-session';
+
+let hash = createHash('sha1');
+hash.update(readFileSync('ssfn1234567890'));
+let buffer = hash.digest(); // buffer contains a Buffer
+
+let session = new LoginSession(EAuthTokenPlatformType.SteamClient);
+session.startWithCredentials({
+	accountName: 'johndoe',
+	password: 'h3ll0wor1d',
+	steamGuardMachineToken: buffer
+});
+```
+
 If you supply a `steamGuardCode` here and you're using email-based Steam Guard, Steam will send you a new Steam Guard
 email if you're using EAuthTokenPlatformType = SteamClient or MobileApp. You would ideally keep your LoginSession active
 that generated your first email, and pass the code using [`submitSteamGuardCode`](#submitsteamguardcodeauthcode) instead
