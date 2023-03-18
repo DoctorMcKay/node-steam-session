@@ -1,9 +1,9 @@
-name: Lint and Build
+name: Test and Build
 
 on: [ push, pull_request ]
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
 
     # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [ 12.x ]
+        node-version: [ 12.x, 14.x, 16.x, 18.x ]
 
     steps:
       - uses: actions/checkout@v1
@@ -35,6 +35,9 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Run tests
+        run: npm run test
 
   build:
     runs-on: ubuntu-latest
