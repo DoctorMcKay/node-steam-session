@@ -89,6 +89,19 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 			};
 
 		case EAuthTokenPlatformType.WebBrowser:
+
+			return {
+				websiteId: 'Store',
+				headers: {
+					'user-agent': CHROME_USER_AGENT,
+					origin: 'https://store.steampowered.com',
+					referer: 'https://store.steampowered.com'
+				},
+				deviceDetails: {
+					device_friendly_name: CHROME_USER_AGENT,
+					platform_type: EAuthTokenPlatformType.WebBrowser
+				}
+			};
 			return {
 				websiteId: 'Community',
 				headers: {
@@ -101,6 +114,20 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 					platform_type: EAuthTokenPlatformType.WebBrowser
 				}
 			};
+
+		// case EAuthTokenPlatformType.WebStore:
+		// 	return {
+		// 		websiteId: 'Community',
+		// 		headers: {
+		// 			'user-agent': CHROME_USER_AGENT,
+		// 			origin: 'https://steamcommunity.com',
+		// 			referer: 'https://steamcommunity.com'
+		// 		},
+		// 		deviceDetails: {
+		// 			device_friendly_name: CHROME_USER_AGENT,
+		// 			platform_type: EAuthTokenPlatformType.WebBrowser
+		// 		}
+		// 	};
 
 		case EAuthTokenPlatformType.MobileApp:
 			return {
@@ -126,7 +153,8 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 
 export function getSpoofedHostname() {
 	let hash = createHash('sha1');
-	hash.update(hostname());
+	let host = hostname()
+	hash.update(host);
 	let sha1 = hash.digest();
 
 	const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
