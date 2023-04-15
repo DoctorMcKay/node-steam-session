@@ -306,7 +306,7 @@ export default class WebSocketCMTransport implements ITransport {
 
 				let timeout = setTimeout(() => {
 					reject(new Error(`Request ${serviceMethodName} timed out`));
-				}, 2000);
+				}, 5000);
 
 				this._jobs[jobId] = {resolve, reject, timeout};
 			} else {
