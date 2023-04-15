@@ -35,7 +35,7 @@ const debug = createDebug('steam-session:LoginSession');
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
-	loginTimeout: number;
+	_loginTimeout: number;
 
 	_accountName?: string;
 	_accessToken?: string;
@@ -95,6 +95,18 @@ export default class LoginSession extends EventEmitter {
 		this.on('debug', debug);
 
 		this.loginTimeout = 30000;
+	}
+
+	get loginTimeout(): number {
+		return this._loginTimeout;
+	}
+
+	set loginTimeout(value: number) {
+		if (this._pollingStartedTime) {
+			throw new Error('Setting loginTimeout after polling has already started is ineffective');
+		}
+
+		this._loginTimeout = value;
 	}
 
 	get steamID(): SteamID {
