@@ -187,6 +187,9 @@ this is always populated when [`authenticated`](#authenticated) fires).
 A `number` specifying the time, in milliseconds, before a login attempt will [`timeout`](#timeout). The timer begins
 after [`polling`](#polling) begins.
 
+If you attempt to set this property after [`polling`](#polling) has already been emitted, an Error will be thrown since
+setting this property after that point has no effect.
+
 ### accountName
 
 **Read-only.** A `string` containing your account name. This is populated just before the [`authenticated`](#authenticated)
