@@ -20,6 +20,9 @@
 		"url": "https://github.com/DoctorMcKay/node-steam-session.git"
 	},
 	"main": "dist/index.js",
+	"files": [
+		"/dist"
+	],
 	"scripts": {
 		"prepare": "npm run build",
 		"prepublishOnly": "npm run lint && npm run test",
