@@ -1,5 +1,5 @@
 import {createInterface} from 'readline';
-import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from '../src'; // use the following line if you installed the module from npm
+import {EAuthSessionGuardType, EAuthTokenPlatformType, EResult, LoginSession} from '../src'; // use the following line if you installed the module from npm
 //import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from 'steam-session';
 
 const SOCKS_PROXY_URL = 'socks5://127.0.0.1:8888';
@@ -39,30 +39,39 @@ async function main() {
 		let printGuard = async ({type, detail}) => {
 			let code;
 
-			switch (type) {
-				case EAuthSessionGuardType.EmailCode:
-					console.log(`A login code has been sent to your email address at ${detail}`);
-					code = await promptAsync('Code: ');
-					if (code) {
-						await session.submitSteamGuardCode(code);
-					}
-					break;
+			try {
+				switch (type) {
+					case EAuthSessionGuardType.EmailCode:
+						console.log(`A login code has been sent to your email address at ${detail}`);
+						code = await promptAsync('Code: ');
+						if (code) {
+							await session.submitSteamGuardCode(code);
+						}
+						break;
 
-				case EAuthSessionGuardType.DeviceCode:
-					console.log('You may confirm this login by providing a Steam Guard Mobile Authenticator code');
-					code = await promptAsync('Code: ');
-					if (code) {
-						await session.submitSteamGuardCode(code);
-					}
-					break;
+					case EAuthSessionGuardType.DeviceCode:
+						console.log('You may confirm this login by providing a Steam Guard Mobile Authenticator code');
+						code = await promptAsync('Code: ');
+						if (code) {
+							await session.submitSteamGuardCode(code);
+						}
+						break;
 
-				case EAuthSessionGuardType.EmailConfirmation:
-					console.log('You may confirm this login by email');
-					break;
+					case EAuthSessionGuardType.EmailConfirmation:
+						console.log('You may confirm this login by email');
+						break;
 
-				case EAuthSessionGuardType.DeviceConfirmation:
-					console.log('You may confirm this login by responding to the prompt in your Steam mobile app');
-					break;
+					case EAuthSessionGuardType.DeviceConfirmation:
+						console.log('You may confirm this login by responding to the prompt in your Steam mobile app');
+						break;
+				}
+			} catch (ex) {
+				if (ex.eresult == EResult.TwoFactorCodeMismatch) {
+					console.log('Incorrect Steam Guard code');
+					printGuard({type, detail});
+				} else {
+					throw ex;
+				}
 			}
 		};
 
