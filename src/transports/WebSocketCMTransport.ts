@@ -1,7 +1,7 @@
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import VDF from 'vdf';
-import WS13 from 'websocket13';
+import {WebSocket, FrameType as WsFrameType, State as WsState} from 'websocket13';
 import Zlib from 'zlib';
 
 import ITransport, {ApiRequest, ApiResponse} from './ITransport';
@@ -59,7 +59,7 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	close() {
-		if (this._websocket && this._websocket.state == WS13.State.Connected) {
+		if (this._websocket && this._websocket.state == WsState.Connected) {
 			this._websocket.disconnect();
 		}
 	}
@@ -67,7 +67,7 @@ export default class WebSocketCMTransport implements ITransport {
 	_connectToCM(): Promise<void> {
 		return new Promise(async (resolve, reject) => {
 			try {
-				if (this._websocket && this._websocket.state == WS13.State.Connecting) {
+				if (this._websocket && this._websocket.state == WsState.Connecting) {
 					// Just wait for the previous connection attempt to succeed
 
 					let connected, error;
@@ -99,7 +99,7 @@ export default class WebSocketCMTransport implements ITransport {
 				debug(`Connecting to ${cm.endpoint}`);
 
 				let resolved = false;
-				this._websocket = new WS13.WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
+				this._websocket = new WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
 					connection: {
 						agent: this._agent
 					}
@@ -129,7 +129,7 @@ export default class WebSocketCMTransport implements ITransport {
 				});
 
 				this._websocket.on('message', (type, msg) => {
-					if (type != WS13.FrameType.Data.Binary) {
+					if (type != WsFrameType.Data.Binary) {
 						debug(`Received unexpected frame type from ${cm.endpoint}: ${type.toString(16)}`);
 						return;
 					}
@@ -234,7 +234,7 @@ export default class WebSocketCMTransport implements ITransport {
 				let logOnResponse: CMsgClientLogonResponse = Protos.CMsgClientLogonResponse.toObject(decodedLogOnResponse, {longs: String});
 				debug(`Received ClientLogOnResponse with result: ${EResult[logOnResponse.eresult] || logOnResponse.eresult}`);
 
-				if (this._websocket.state == WS13.State.Connected) {
+				if (this._websocket.state == WsState.Connected) {
 					this._websocket.disconnect();
 					this._websocket = null;
 				}
@@ -285,7 +285,7 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	async _sendMessage(eMsg: EMsg, body: Buffer, serviceMethodName?: string): Promise<any> {
-		if (!this._websocket || this._websocket.state != WS13.State.Connected) {
+		if (!this._websocket || this._websocket.state != WsState.Connected) {
 			await this._connectToCM();
 		}
 
