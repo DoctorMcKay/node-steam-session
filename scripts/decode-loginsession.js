@@ -7,6 +7,10 @@ if (!process.argv[2] || !FS.existsSync(process.argv[2])) {
 	process.exit(1);
 }
 
+const METHOD_TO_PROTOBUF_MAP = {
+	GenerateAccessTokenForApp: 'AccessToken_GenerateForApp'
+};
+
 let har;
 let output = [];
 try {
@@ -27,8 +31,9 @@ har.log.entries.forEach(({request, response}) => {
 	}
 
 	let apiMethod = match[1];
-	let requestProto = Protos[`CAuthentication_${apiMethod}_Request`];
-	let responseProto = Protos[`CAuthentication_${apiMethod}_Response`];
+	let protoName = METHOD_TO_PROTOBUF_MAP[apiMethod] || apiMethod;
+	let requestProto = Protos[`CAuthentication_${protoName}_Request`];
+	let responseProto = Protos[`CAuthentication_${protoName}_Response`];
 	if (!requestProto || !responseProto) {
 		return;
 	}
