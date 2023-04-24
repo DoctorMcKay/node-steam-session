@@ -216,6 +216,7 @@ fired. You can also assign a refresh token to this property if you already have 
 Setting this property will throw an Error if:
 
 - You set it to a token that isn't well-formed, or
+- You set it to an access token rather than a refresh token, or
 - You have already called [`startWithCredentials`](#startwithcredentialsdetails) and you set it to a token that doesn't belong to the same account, or
 - You have already set [`accessToken`](#accesstoken) and you set this to a token that doesn't belong to the same account as the access token
 

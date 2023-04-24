@@ -134,7 +134,7 @@ export default class LoginSession extends EventEmitter {
 		let decoded = decodeJwt(token);
 
 		try { new SteamID(decoded.sub); } catch {
-			throw new Error('Not a valid Steam access token');
+			throw new Error('Not a valid Steam token');
 		}
 
 		let aud = decoded.aud || [];
@@ -171,7 +171,12 @@ export default class LoginSession extends EventEmitter {
 		let decoded = decodeJwt(token);
 
 		try { new SteamID(decoded.sub); } catch {
-			throw new Error('Not a valid Steam access token');
+			throw new Error('Not a valid Steam token');
+		}
+
+		let aud = decoded.aud || [];
+		if (!aud.includes('derive')) {
+			throw new Error('The provided token is an access token, not a refresh token');
 		}
 
 		if (
