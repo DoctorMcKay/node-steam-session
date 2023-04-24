@@ -544,6 +544,14 @@ export default class LoginSession extends EventEmitter {
 
 		return await promiseAny(transfers);
 	}
+
+	async refreshAccessToken(): Promise<void> {
+		if (!this.refreshToken) {
+			throw new Error('A refresh token is required to get a new access token');
+		}
+
+		this.accessToken = await this._handler.generateAccessTokenForApp(this.refreshToken);
+	}
 }
 
 /**

@@ -1,11 +1,18 @@
 import createDebug from 'debug';
+import {EventEmitter} from 'events';
 import {hex2b64, Key as RSAKey} from 'node-bignumber';
 
-import Protos from './protobuf-generated/load';
-import ITransport, {ApiResponse} from './transports/ITransport';
+import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EResult from './enums-steam/EResult';
-import {API_HEADERS, eresultError, getDataForPlatformType, isJwtValidForAudience} from './helpers';
+
+import {getProtoForMethod} from './protobufs';
+import ITransport, {ApiResponse} from './transports/ITransport';
+import WebClient from './WebClient';
+
+import {API_HEADERS, decodeJwt, eresultError, getDataForPlatformType, isJwtValidForAudience} from './helpers';
 import {
+	CAuthentication_AccessToken_GenerateForApp_Request,
+	CAuthentication_AccessToken_GenerateForApp_Response,
 	CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
 	CAuthentication_BeginAuthSessionViaQR_Request,
@@ -32,9 +39,6 @@ import {
 	StartAuthSessionWithQrResponse,
 	SubmitSteamGuardCodeRequest
 } from './interfaces-internal';
-import EventEmitter from 'events';
-import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
-import WebClient from './WebClient';
 
 const debug = createDebug('steam-session:AuthenticationClient');
 
@@ -251,21 +255,29 @@ export default class AuthenticationClient extends EventEmitter {
 		});
 	}
 
+	async generateAccessTokenForApp(refreshToken: string): Promise<string> {
+		let data:CAuthentication_AccessToken_GenerateForApp_Request = {
+			refresh_token: refreshToken,
+			steamid: decodeJwt(refreshToken).sub
+		};
+
+		let result:CAuthentication_AccessToken_GenerateForApp_Response = await this.sendRequest({
+			apiInterface: 'Authentication',
+			apiMethod: 'GenerateAccessTokenForApp',
+			apiVersion: 1,
+			data
+		});
+
+		// We're done with the transport
+		this._transport.close();
+
+		return result.access_token;
+	}
+
 	async sendRequest(request: RequestDefinition): Promise<any> {
 		// Right now we really only support IAuthenticationService
 
-		let protoSignature = `C${request.apiInterface}_${request.apiMethod}`;
-		let requestProtoSignature = `${protoSignature}_Request`;
-		let responseProtoSignature = `${protoSignature}_Response`;
-
-		if (protoSignature == 'CAuthentication_BeginAuthSessionViaCredentials') {
-			// we need to use our custom definition to support sentry file hashes
-			requestProtoSignature += '_BinaryGuardData';
-		}
-
-		let requestProto:any = Protos[requestProtoSignature];
-		let responseProto:any = Protos[responseProtoSignature];
-
+		let {request: requestProto, response: responseProto} = getProtoForMethod(request.apiInterface, request.apiMethod);
 		if (!requestProto || !responseProto) {
 			throw new Error(`Unknown API method ${request.apiInterface}/${request.apiMethod}`);
 		}

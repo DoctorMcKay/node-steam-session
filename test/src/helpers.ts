@@ -1,6 +1,7 @@
 import {ApiRequest} from '../../src';
 import Protos from '../../src/protobuf-generated/load';
 import {randomBytes} from 'crypto';
+import {getProtoForMethod} from '../../src/protobufs';
 
 export function protobufEncodeResponse(request: ApiRequest, response: object): Buffer {
 	let protoSignature = `C${request.apiInterface}_${request.apiMethod}`;
@@ -11,28 +12,12 @@ export function protobufEncodeResponse(request: ApiRequest, response: object): B
 }
 
 export function protobufEncodeRequest(request: ApiRequest, requestData: object): Buffer {
-	let protoSignature = `C${request.apiInterface}_${request.apiMethod}`;
-	let requestProtoSignature = `${protoSignature}_Request`;
-
-	if (protoSignature == 'CAuthentication_BeginAuthSessionViaCredentials') {
-		// we need to use our custom definition to support sentry file hashes
-		requestProtoSignature += '_BinaryGuardData';
-	}
-
-	let proto:any = Protos[requestProtoSignature];
+	let {request: proto} = getProtoForMethod(request.apiInterface, request.apiMethod);
 	return proto.encode(requestData);
 }
 
 export function protobufDecodeRequest(request: ApiRequest): Buffer {
-	let protoSignature = `C${request.apiInterface}_${request.apiMethod}`;
-	let requestProtoSignature = `${protoSignature}_Request`;
-
-	if (protoSignature == 'CAuthentication_BeginAuthSessionViaCredentials') {
-		// we need to use our custom definition to support sentry file hashes
-		requestProtoSignature += '_BinaryGuardData';
-	}
-
-	let proto:any = Protos[requestProtoSignature];
+	let {request: proto} = getProtoForMethod(request.apiInterface, request.apiMethod);
 	let decoded = proto.decode(request.requestData);
 	return proto.toObject(decoded, {longs: String});
 }
