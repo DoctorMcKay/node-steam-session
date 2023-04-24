@@ -137,6 +137,11 @@ export default class LoginSession extends EventEmitter {
 			throw new Error('Not a valid Steam access token');
 		}
 
+		let aud = decoded.aud || [];
+		if (aud.includes('derive')) {
+			throw new Error('The provided token is a refresh token, not an access token');
+		}
+
 		if (
 			this._startSessionResponse
 			&& (this._startSessionResponse as StartAuthSessionWithCredentialsResponse).steamId
