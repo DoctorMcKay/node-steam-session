@@ -398,6 +398,7 @@ Here's an example of how you can get new web cookies when you already have a val
 
 ```js
 import {LoginSession, EAuthTokenPlatformType} from 'steam-session';
+
 let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
 session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...';
 let cookies = await session.getWebCookies();
@@ -415,6 +416,7 @@ accessToken property.
 
 ```js
 import {LoginSession, EAuthTokenPlatformType} from 'steam-session';
+
 let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
 session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...';
 await session.refreshAccessToken();
