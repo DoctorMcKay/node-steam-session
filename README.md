@@ -403,7 +403,7 @@ session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ.
 let cookies = await session.getWebCookies();
 ```
 
-### refreshAccessToken
+### refreshAccessToken()
 
 As long as a [`refreshToken`](#refreshtoken) is set, you can call this method to obtain a new access token.
 Returns a Promise.
