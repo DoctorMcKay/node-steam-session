@@ -1,7 +1,7 @@
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import VDF from 'vdf';
-import WS13 from 'websocket13';
+import {WebSocket, FrameType as WsFrameType, State as WsState} from 'websocket13';
 import Zlib from 'zlib';
 
 import ITransport, {ApiRequest, ApiResponse} from './ITransport';
@@ -60,7 +60,7 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	close() {
-		if (this._websocket && this._websocket.state == WS13.State.Connected) {
+		if (this._websocket && this._websocket.state == WsState.Connected) {
 			this._websocket.disconnect();
 		}
 	}
@@ -68,7 +68,7 @@ export default class WebSocketCMTransport implements ITransport {
 	_connectToCM(): Promise<void> {
 		return new Promise(async (resolve, reject) => {
 			try {
-				if (this._websocket && this._websocket.state == WS13.State.Connecting) {
+				if (this._websocket && this._websocket.state == WsState.Connecting) {
 					// Just wait for the previous connection attempt to succeed
 
 					let connected, error;
@@ -100,7 +100,7 @@ export default class WebSocketCMTransport implements ITransport {
 				debug(`Connecting to ${cm.endpoint}`);
 
 				let resolved = false;
-				this._websocket = new WS13.WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
+				this._websocket = new WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
 					connection: {
 						agent: this._agent
 					}
@@ -145,7 +145,7 @@ export default class WebSocketCMTransport implements ITransport {
 				});
 
 				this._websocket.on('message', (type, msg) => {
-					if (type != WS13.FrameType.Data.Binary) {
+					if (type != WsFrameType.Data.Binary) {
 						debug(`Received unexpected frame type from ${cm.endpoint}: ${type.toString(16)}`);
 						return;
 					}
@@ -227,7 +227,8 @@ export default class WebSocketCMTransport implements ITransport {
 		}
 
 		if (protoHeader.jobid_target && this._jobs[protoHeader.jobid_target]) {
-			let {resolve} = this._jobs[protoHeader.jobid_target];
+			let {resolve, timeout} = this._jobs[protoHeader.jobid_target];
+			clearTimeout(timeout);
 			delete this._jobs[protoHeader.jobid_target];
 
 			let response: ApiResponse = {
@@ -249,13 +250,14 @@ export default class WebSocketCMTransport implements ITransport {
 				let logOnResponse: CMsgClientLogonResponse = Protos.CMsgClientLogonResponse.toObject(decodedLogOnResponse, {longs: String});
 				debug(`Received ClientLogOnResponse with result: ${EResult[logOnResponse.eresult] || logOnResponse.eresult}`);
 
-				if (this._websocket.state == WS13.State.Connected) {
+				if (this._websocket.state == WsState.Connected) {
 					this._websocket.disconnect();
 					this._websocket = null;
 				}
 
 				for (let i in this._jobs) {
-					let {reject} = this._jobs[i];
+					let {reject, timeout} = this._jobs[i];
+					clearTimeout(timeout);
 					reject(eresultError(logOnResponse.eresult));
 				}
 				break;
@@ -299,14 +301,14 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	async _sendMessage(eMsg: EMsg, body: Buffer, serviceMethodName?: string): Promise<any> {
-		if (!this._websocket || this._websocket.state != WS13.State.Connected) {
+		if (!this._websocket || this._websocket.state != WsState.Connected) {
 			await this._connectToCM();
 		}
 
 		return await new Promise((resolve, reject) => {
 			let protoHeader: CMsgProtoBufHeader = {
 				steamid: '0',
-				client_sessionid: this._clientSessionId,
+				client_sessionid: eMsg != EMsg.ServiceMethodCallFromClientNonAuthed ? this._clientSessionId : 0,
 			};
 
 			if (eMsg == EMsg.ServiceMethodCallFromClientNonAuthed) {
@@ -318,7 +320,11 @@ export default class WebSocketCMTransport implements ITransport {
 				protoHeader.target_job_name = serviceMethodName;
 				protoHeader.realm = 1;
 
-				this._jobs[jobId] = {resolve, reject};
+				let timeout = setTimeout(() => {
+					reject(new Error(`Request ${serviceMethodName} timed out`));
+				}, 5000);
+
+				this._jobs[jobId] = {resolve, reject, timeout};
 			} else {
 				// There's no response, so just resolve right now
 				resolve(undefined);
@@ -331,6 +337,7 @@ export default class WebSocketCMTransport implements ITransport {
 			header.writeUInt32LE(encodedProtoHeader.length, 4);
 
 			debugVerbose(`Send: ${EMsg[eMsg] || eMsg} (${serviceMethodName})`);
+
 			this._websocket.send(Buffer.concat([
 				header,
 				encodedProtoHeader,

@@ -14,7 +14,7 @@ export interface StartLoginSessionWithCredentialsDetails {
 	accountName: string;
 	password: string;
 	persistence?: ESessionPersistence;
-	steamGuardMachineToken?: string;
+	steamGuardMachineToken?: string|Buffer;
 	steamGuardCode?: string;
 }
 

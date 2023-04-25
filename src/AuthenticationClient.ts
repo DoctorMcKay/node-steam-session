@@ -1,12 +1,19 @@
 import createDebug from 'debug';
+import {EventEmitter} from 'events';
 import {hex2b64, Key as RSAKey} from 'node-bignumber';
 
-import Protos from './protobuf-generated/load';
-import ITransport, {ApiResponse} from './transports/ITransport';
+import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EResult from './enums-steam/EResult';
-import {API_HEADERS, eresultError, getDataForPlatformType, isJwtValidForAudience} from './helpers';
+
+import {getProtoForMethod} from './protobufs';
+import ITransport, {ApiResponse} from './transports/ITransport';
+import WebClient from './WebClient';
+
+import {API_HEADERS, decodeJwt, eresultError, getDataForPlatformType, isJwtValidForAudience} from './helpers';
 import {
-	CAuthentication_BeginAuthSessionViaCredentials_Request,
+	CAuthentication_AccessToken_GenerateForApp_Request,
+	CAuthentication_AccessToken_GenerateForApp_Response,
+	CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
 	CAuthentication_BeginAuthSessionViaQR_Request,
 	CAuthentication_BeginAuthSessionViaQR_Response,
@@ -32,10 +39,6 @@ import {
 	StartAuthSessionWithQrResponse,
 	SubmitSteamGuardCodeRequest
 } from './interfaces-internal';
-import ESessionPersistence from './enums-steam/ESessionPersistence';
-import EventEmitter from 'events';
-import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
-import WebClient from './WebClient';
 
 const debug = createDebug('steam-session:AuthenticationClient');
 
@@ -83,18 +86,29 @@ export default class AuthenticationClient extends EventEmitter {
 	async startSessionWithCredentials(details: StartAuthSessionWithCredentialsRequest): Promise<StartAuthSessionWithCredentialsResponse> {
 		let {websiteId, deviceDetails} = getDataForPlatformType(details.platformType);
 
-		let data:CAuthentication_BeginAuthSessionViaCredentials_Request = {
+		let data:CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData = {
 			account_name: details.accountName,
 			encrypted_password: details.encryptedPassword,
 			encryption_timestamp: details.keyTimestamp,
-			remember_login: details.persistence == ESessionPersistence.Persistent,
 			persistence: details.persistence,
 			website_id: websiteId,
 			device_details: deviceDetails
 		};
 
-		if (details.steamGuardMachineToken && isJwtValidForAudience(details.steamGuardMachineToken, 'machine')) {
-			data.guard_data = details.steamGuardMachineToken;
+		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
+			// At least for SteamClient logins, we don't supply device_details.
+			// TODO: check if this is true for other platform types
+			data.device_friendly_name = deviceDetails.device_friendly_name;
+			data.platform_type = deviceDetails.platform_type;
+			delete data.device_details;
+		}
+
+		if (details.steamGuardMachineToken) {
+			if (Buffer.isBuffer(details.steamGuardMachineToken)) {
+				data.guard_data = details.steamGuardMachineToken;
+			} else if (typeof details.steamGuardMachineToken == 'string' && isJwtValidForAudience(details.steamGuardMachineToken, 'machine')) {
+				data.guard_data = Buffer.from(details.steamGuardMachineToken, 'utf8');
+			}
 		}
 
 		let result:CAuthentication_BeginAuthSessionViaCredentials_Response = await this.sendRequest({
@@ -241,12 +255,29 @@ export default class AuthenticationClient extends EventEmitter {
 		});
 	}
 
+	async generateAccessTokenForApp(refreshToken: string): Promise<string> {
+		let data:CAuthentication_AccessToken_GenerateForApp_Request = {
+			refresh_token: refreshToken,
+			steamid: decodeJwt(refreshToken).sub
+		};
+
+		let result:CAuthentication_AccessToken_GenerateForApp_Response = await this.sendRequest({
+			apiInterface: 'Authentication',
+			apiMethod: 'GenerateAccessTokenForApp',
+			apiVersion: 1,
+			data
+		});
+
+		// We're done with the transport
+		this._transport.close();
+
+		return result.access_token;
+	}
+
 	async sendRequest(request: RequestDefinition): Promise<any> {
 		// Right now we really only support IAuthenticationService
 
-		let requestProto:any = Protos[`C${request.apiInterface}_${request.apiMethod}_Request`];
-		let responseProto:any = Protos[`C${request.apiInterface}_${request.apiMethod}_Response`];
-
+		let {request: requestProto, response: responseProto} = getProtoForMethod(request.apiInterface, request.apiMethod);
 		if (!requestProto || !responseProto) {
 			throw new Error(`Unknown API method ${request.apiInterface}/${request.apiMethod}`);
 		}

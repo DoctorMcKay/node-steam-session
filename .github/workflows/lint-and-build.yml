@@ -1,76 +1,45 @@
-name: Lint and Build
+name: Test and Build
 
-on: [ push, pull_request ]
+on:
+    push:
+        branches:
+            # Only run on branch push, not tag push
+            - '**'
+    pull_request:
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
+    lint:
+        # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
 
-    # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
-
-    strategy:
-      matrix:
-        node-version: [ 12.x ]
-
-    steps:
-      - uses: actions/checkout@v1
+        uses: DoctorMcKay/github-workflows/.github/workflows/eslint.yml@master
         with:
-          fetch-depth: 1
+            node-version: 12.x
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+    test:
+        # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
+
+        strategy:
+            matrix:
+                node-version: [ 12.x, 14.x, 16.x, 18.x, 20.x ]
+
+        uses: DoctorMcKay/github-workflows/.github/workflows/npm-test.yml@master
         with:
-          node-version: ${{ matrix.node-version }}
+            node-version: ${{ matrix.node-version }}
 
-      - name: Cache dependencies
-        uses: actions/cache@v3
+    build:
+        # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
+
+        uses: DoctorMcKay/github-workflows/.github/workflows/npm-pack.yml@master
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules
+            node-version: 12.x
+            package-name: steam-session
 
-      - name: npm install
-        working-directory: .
-        run: npm install --ignore-scripts
-
-      - name: Run ESLint
-        run: npm run lint
-
-  build:
-    runs-on: ubuntu-latest
-
-    # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
-
-    strategy:
-      matrix:
-        node-version: [ 12.x ]
-
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          fetch-depth: 1
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules
-
-      - name: npm install
-        working-directory: .
-        run: npm install --ignore-scripts
-
-      - name: Run build
-        run: npm pack
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: package
-          path: steam-session-*.tgz
+    publish:
+        needs: [ lint, test, build ]
+        if: success() && github.event.ref == 'refs/heads/master' && contains(github.event.head_commit.message, '#npm-publish')
+        uses: DoctorMcKay/github-workflows/.github/workflows/npm-publish.yml@master
+        secrets:
+            npm-access-token: ${{ secrets.NPM_ACCESS_TOKEN }}
