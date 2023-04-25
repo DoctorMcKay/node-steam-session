@@ -18,9 +18,7 @@ jobs:
 
     test:
         # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
-        # Don't run for tag pushes
-        if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session') ||
-            (github.event_name == 'push' && startsWith(github.event.ref, 'refs/heads'))
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
 
         strategy:
             matrix:
@@ -32,7 +30,6 @@ jobs:
 
     build:
         # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
-        # Don't run for tag pushes
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-steam-session'
 
         uses: DoctorMcKay/github-workflows/.github/workflows/npm-pack.yml@master
