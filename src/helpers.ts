@@ -7,7 +7,7 @@ import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import {PlatformData} from './interfaces-internal';
 import EOSType from './enums-steam/EOSType';
 
-const CHROME_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36';
+const CHROME_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36';
 
 export function eresultError(result:EResult, errorMessage?:string): Error {
 	let resultMsg:string = result.toString(); // this is the numeric value, as a string
@@ -81,7 +81,7 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 					referer: 'https://steamloopback.host/index.html?' + encodeQueryString(refererQuery)
 				},
 				// device_details is also not sent for SteamClient logins, matching the behavior of the official client
-				// TODO check if device_details is still sent for other login types
+				// in the past, the client did send these details, but not anymore
 				deviceDetails: {
 					device_friendly_name: refererQuery.LOCAL_HOSTNAME,
 					platform_type: EAuthTokenPlatformType.SteamClient,
@@ -99,6 +99,7 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 					origin: 'https://steamcommunity.com',
 					referer: 'https://steamcommunity.com'
 				},
+				// device details are sent for web logins
 				deviceDetails: {
 					device_friendly_name: CHROME_USER_AGENT,
 					platform_type: EAuthTokenPlatformType.WebBrowser
