@@ -383,8 +383,11 @@ export default class LoginSession extends EventEmitter {
 			pollResponse = await this._handler.pollLoginStatus(this._startSessionResponse);
 			this.emit('debug', 'poll response', pollResponse);
 		} catch (ex) {
-			this.emit('error', ex);
-			this.cancelLoginAttempt();
+			// If we got an error, but we've already canceled polling, just do nothing.
+			if (!this._pollingCanceled) {
+				this.emit('error', ex);
+				this.cancelLoginAttempt();
+			}
 			return;
 		}
 
