@@ -74,11 +74,14 @@ export function getDataForPlatformType(platformType:EAuthTokenPlatformType): Pla
 
 			return {
 				websiteId: 'Client',
+				// Headers are actually not used since this is sent over a CM connection
 				headers: {
 					'user-agent': 'Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/1665786434; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
 					origin: 'https://steamloopback.host',
 					referer: 'https://steamloopback.host/index.html?' + encodeQueryString(refererQuery)
 				},
+				// device_details is also not sent for SteamClient logins, matching the behavior of the official client
+				// TODO check if device_details is still sent for other login types
 				deviceDetails: {
 					device_friendly_name: refererQuery.LOCAL_HOSTNAME,
 					platform_type: EAuthTokenPlatformType.SteamClient,
