@@ -523,7 +523,9 @@ export default class LoginSession extends EventEmitter {
 		}
 
 		if (!finalizeResponse.body || !finalizeResponse.body.transfer_info) {
-			throw new Error('Malformed login response');
+			let err:any = new Error('Malformed login response');
+			err.responseBody = finalizeResponse.body;
+			throw err;
 		}
 
 		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
