@@ -33,7 +33,7 @@
 		"generate-protos": "node scripts/generate-protos.js"
 	},
 	"dependencies": {
-		"@doctormckay/stdlib": "^1.15.0",
+		"@doctormckay/stdlib": "^2.1.2",
 		"debug": "^4.3.4",
 		"node-bignumber": "^1.2.2",
 		"protobufjs": "^7.1.0",

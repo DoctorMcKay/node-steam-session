@@ -8,7 +8,7 @@ import {randomBytes} from 'crypto';
 const debug = createDebug('steam-session:WebClient');
 
 export interface WebClientOptions {
-	agent?: HTTPS.Agent;
+	agent?: HTTPS.Agent|boolean;
 }
 
 export interface RequestOptions {
@@ -25,7 +25,7 @@ export default class WebClient {
 	_agent: HTTPS.Agent;
 
 	constructor(options: WebClientOptions) {
-		this._agent = options.agent || new HTTPS.Agent({keepAlive: true});
+		this._agent = (options.agent || new HTTPS.Agent({keepAlive: true})) as HTTPS.Agent;
 	}
 
 	async get(url: string, options?: RequestOptions): Promise<ResponseData> {
