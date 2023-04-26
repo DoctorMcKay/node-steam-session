@@ -40,7 +40,7 @@ har.log.entries.forEach(({request, response}) => {
 
 	let params = (request.method == 'GET' ? request.queryString : request.postData.params) || [];
 	let inputParam = params.find(v => v.name == 'input_protobuf_encoded');
-	let inputEncoded = Buffer.from(inputParam?.value || '', 'base64');
+	let inputEncoded = Buffer.from((inputParam && inputParam.value) || '', 'base64');
 
 	if (response.content.encoding != 'base64') {
 		return;
