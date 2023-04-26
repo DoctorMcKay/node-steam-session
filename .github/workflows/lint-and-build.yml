@@ -56,7 +56,7 @@ jobs:
             -   name: Run integration test
                 env:
                     LOGIN_SESSION_LIVE_TEST_DATA: ${{ secrets.LOGIN_SESSION_LIVE_TEST_DATA }}
-                run: jest LoginSession_live.test.ts
+                run: npx jest LoginSession_live.test.ts
 
     build:
         # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
