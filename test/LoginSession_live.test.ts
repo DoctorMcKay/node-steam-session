@@ -4,19 +4,11 @@ import {getAuthCode} from 'steam-totp';
 import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from '../src';
 import {decodeJwt} from '../src/helpers';
 
-process.env.LOGIN_SESSION_LIVE_TEST_DATA = JSON.stringify([
-	{
-		nickname: 'Test Account 1',
-		steamId: '76561199499896759',
-		accountName: 'steam_session_test_account_1',
-		password: 'dFFcZWeD2nkaVvYDBkwWByqN',
-		sharedSecret: 'keUZqDB4LPRoYGahcsy82PWBb5g='
-	}
-]);
+let liveTestDescribe = process.env.LOGIN_SESSION_LIVE_TEST_DATA ? describe : describe.skip;
 
-describe('LoginSession live tests', () => {
+liveTestDescribe('LoginSession live tests', () => {
 	describe('mobile 2FA logins', () => {
-		let accountDetails = JSON.parse(process.env.LOGIN_SESSION_LIVE_TEST_DATA);
+		let accountDetails = JSON.parse(process.env.LOGIN_SESSION_LIVE_TEST_DATA || '[{"nickname":"Skipped due to no test data"}]');
 		accountDetails.forEach((account) => {
 			describe(account.nickname, () => {
 				test('EAuthTokenPlatformType.SteamClient', () => new Promise(async (resolve, reject) => {
