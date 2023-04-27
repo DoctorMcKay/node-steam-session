@@ -1,17 +1,18 @@
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
+import {Agent} from 'https';
+import {HttpClient} from '@doctormckay/stdlib/http';
 import VDF from 'vdf';
 import {WebSocket, FrameType as WsFrameType, State as WsState} from 'websocket13';
 import Zlib from 'zlib';
 
-import ITransport, {ApiRequest, ApiResponse} from './ITransport';
 import EMsg from '../enums-steam/EMsg';
+import EResult from '../enums-steam/EResult';
+
 import Protos from '../protobuf-generated/load';
 import {CMsgClientHello, CMsgClientLogonResponse, CMsgMulti, CMsgProtoBufHeader} from '../protobuf-generated/types';
-import EResult from '../enums-steam/EResult';
+import ITransport, {ApiRequest, ApiResponse} from './ITransport';
 import {eresultError} from '../helpers';
-import WebClient from '../WebClient';
-import {Agent} from 'https';
 
 const debug = createDebug('steam-session:WebSocketCMTransport');
 const debugVerbose = debug.extend('verbose');
@@ -31,13 +32,13 @@ interface CmServer {
 
 export default class WebSocketCMTransport implements ITransport {
 	_connectTimeout = 1000;
-	_webClient: WebClient;
+	_webClient: HttpClient;
 	_agent: Agent;
 	_websocket: any;
 	_jobs: any;
 	_clientSessionId = 0;
 
-	constructor(webClient: WebClient, agent: Agent) {
+	constructor(webClient: HttpClient, agent: Agent) {
 		this._webClient = webClient;
 		this._agent = agent;
 		this._websocket = null;
@@ -161,7 +162,9 @@ export default class WebSocketCMTransport implements ITransport {
 	async _fetchCMList(): Promise<CmServer[]> {
 		debug('Fetching CM list');
 
-		let result = await this._webClient.get('https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf', {
+		let result = await this._webClient.request({
+			method: 'GET',
+			url: 'https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf',
 			headers: {
 				'user-agent': 'Valve/Steam HTTP Client 1.0',
 				'accept-charset': 'ISO-8859-1,utf-8,*;q=0.7',
@@ -169,13 +172,13 @@ export default class WebSocketCMTransport implements ITransport {
 			}
 		});
 
-		if (result.res.statusCode != 200) {
+		if (result.statusCode != 200) {
 			let err:any = new Error('Unable to fetch CM list');
-			err.code = result.res.statusCode;
+			err.code = result.statusCode;
 			throw err;
 		}
 
-		let parsedResult = VDF.parse(result.body);
+		let parsedResult = VDF.parse(result.textBody);
 		if (!parsedResult.response || !parsedResult.response.serverlist) {
 			throw new Error('Malformed CM list response');
 		}

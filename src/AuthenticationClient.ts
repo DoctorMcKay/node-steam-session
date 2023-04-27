@@ -1,13 +1,13 @@
 import createDebug from 'debug';
 import {EventEmitter} from 'events';
 import {hex2b64, Key as RSAKey} from 'node-bignumber';
+import {HttpClient} from '@doctormckay/stdlib/http';
 
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EResult from './enums-steam/EResult';
 
 import {getProtoForMethod} from './protobufs';
 import ITransport, {ApiResponse} from './transports/ITransport';
-import WebClient from './WebClient';
 
 import {API_HEADERS, decodeJwt, eresultError, getDataForPlatformType, isJwtValidForAudience} from './helpers';
 import {
@@ -53,9 +53,9 @@ interface RequestDefinition {
 export default class AuthenticationClient extends EventEmitter {
 	_transport: ITransport;
 	_platformType: EAuthTokenPlatformType;
-	_webClient: WebClient;
+	_webClient: HttpClient;
 
-	constructor(platformType: EAuthTokenPlatformType, transport: ITransport, webClient: WebClient) {
+	constructor(platformType: EAuthTokenPlatformType, transport: ITransport, webClient: HttpClient) {
 		super();
 		this._transport = transport;
 		this._platformType = platformType;
@@ -178,10 +178,13 @@ export default class AuthenticationClient extends EventEmitter {
 		let body = {clientid: details.clientId, steamid: details.steamId};
 		debug('POST https://login.steampowered.com/jwt/checkdevice %o', body);
 
-		let result = await this._webClient.postEncoded('https://login.steampowered.com/jwt/checkdevice', body, 'multipart', {
+		let result = await this._webClient.request({
+			method: 'POST',
+			url: 'https://login.steampowered.com/jwt/checkdevice',
+			multipartForm: HttpClient.simpleObjectToMultipartForm(body),
 			headers: API_HEADERS
 		});
-		return result.body;
+		return result.jsonBody as CheckMachineAuthResponse;
 	}
 
 	async pollLoginStatus(details: PollLoginStatusRequest): Promise<PollLoginStatusResponse> {

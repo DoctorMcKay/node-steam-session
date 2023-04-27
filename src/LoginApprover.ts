@@ -2,6 +2,7 @@ import {createHmac} from 'crypto';
 import HTTPS from 'https';
 import {SocksProxyAgent} from 'socks-proxy-agent';
 import StdLib from '@doctormckay/stdlib';
+import {HttpClient} from '@doctormckay/stdlib/http';
 import SteamID from 'steamid';
 
 import AuthenticationClient from './AuthenticationClient';
@@ -10,13 +11,12 @@ import {ApproveAuthSessionRequest, AuthSessionInfo, ConstructorOptions} from './
 import {decodeJwt} from './helpers';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
-import WebClient from './WebClient';
 
 export default class LoginApprover {
 	_accessToken: string;
 	sharedSecret: string|Buffer;
 
-	_webClient: WebClient;
+	_webClient: HttpClient;
 	_handler: AuthenticationClient;
 
 	constructor(accessToken: string, sharedSecret: string|Buffer, options?: ConstructorOptions) {
@@ -31,7 +31,7 @@ export default class LoginApprover {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new WebClient({agent});
+		this._webClient = new HttpClient({httpsAgent: agent});
 
 		this.accessToken = accessToken;
 		this.sharedSecret = sharedSecret;

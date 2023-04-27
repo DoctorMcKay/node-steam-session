@@ -1,4 +1,5 @@
 import StdLib from '@doctormckay/stdlib';
+import {HttpClient} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import EventEmitter from 'events';
@@ -8,7 +9,6 @@ import SteamID from 'steamid';
 
 import AuthenticationClient from './AuthenticationClient';
 import {API_HEADERS, decodeJwt, eresultError} from './helpers';
-import WebClient from './WebClient';
 
 import WebApiTransport from './transports/WebApiTransport';
 import WebSocketCMTransport from './transports/WebSocketCMTransport';
@@ -42,7 +42,7 @@ export default class LoginSession extends EventEmitter {
 	_refreshToken?: string;
 
 	_platformType: EAuthTokenPlatformType;
-	_webClient: WebClient;
+	_webClient: HttpClient;
 	_handler: AuthenticationClient;
 
 	_steamGuardCode?: string;
@@ -74,7 +74,7 @@ export default class LoginSession extends EventEmitter {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new WebClient({agent});
+		this._webClient = new HttpClient({httpsAgent: agent});
 
 		this._platformType = platformType;
 
@@ -514,37 +514,44 @@ export default class LoginSession extends EventEmitter {
 		};
 
 		debug('POST https://login.steampowered.com/jwt/finalizelogin %o', body);
-		let finalizeResponse = await this._webClient.postEncoded('https://login.steampowered.com/jwt/finalizelogin', body, 'multipart', {
-			headers: API_HEADERS
+		let finalizeResponse = await this._webClient.request({
+			method: 'POST',
+			url: 'https://login.steampowered.com/jwt/finalizelogin',
+			headers: API_HEADERS,
+			multipartForm: HttpClient.simpleObjectToMultipartForm(body)
 		});
 
-		if (finalizeResponse.body && finalizeResponse.body.error) {
-			throw eresultError(finalizeResponse.body.error);
+		if (finalizeResponse.jsonBody && finalizeResponse.jsonBody.error) {
+			throw eresultError(finalizeResponse.jsonBody.error);
 		}
 
-		if (!finalizeResponse.body || !finalizeResponse.body.transfer_info) {
+		if (!finalizeResponse.jsonBody || !finalizeResponse.jsonBody.transfer_info) {
 			let err:any = new Error('Malformed login response');
-			err.responseBody = finalizeResponse.body;
+			err.responseBody = finalizeResponse.jsonBody;
 			throw err;
 		}
 
 		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
 		// successful transfer (hence the usage of promsieAny), but we execute them all for robustness in case one fails.
 		// As long as one succeeds, we're good.
-		let transfers = finalizeResponse.body.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
+		let transfers = finalizeResponse.jsonBody.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
 			let body = {steamID: this.steamID.getSteamID64(), ...params};
 			debug('POST %s %o', url, body);
 
-			let result = await this._webClient.postEncoded(url, body, 'multipart');
-			if (!result.res.headers || !result.res.headers['set-cookie'] || result.res.headers['set-cookie'].length == 0) {
+			let result = await this._webClient.request({
+				method: 'POST',
+				url,
+				multipartForm: HttpClient.simpleObjectToMultipartForm(body)
+			});
+			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
 				return reject(new Error('No Set-Cookie header in result'));
 			}
 
-			if (!result.res.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
+			if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
 				return reject(new Error('No steamLoginSecure cookie in result'));
 			}
 
-			resolve(result.res.headers['set-cookie'].map(c => c.split(';')[0].trim()));
+			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
 		}));
 
 		return await promiseAny(transfers);
