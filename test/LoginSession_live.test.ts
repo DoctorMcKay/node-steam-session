@@ -1,4 +1,4 @@
-import {describe, expect, test} from '@jest/globals';
+import {describe, expect, jest, test} from '@jest/globals';
 import {getAuthCode} from 'steam-totp';
 
 import {EAuthSessionGuardType, EAuthTokenPlatformType, LoginSession} from '../src';
@@ -12,6 +12,8 @@ liveTestDescribe('LoginSession live tests', () => {
 		accountDetails.forEach((account) => {
 			describe(account.nickname, () => {
 				test('EAuthTokenPlatformType.SteamClient', () => new Promise(async (resolve, reject) => {
+					jest.setTimeout(20000);
+
 					let session = new LoginSession(EAuthTokenPlatformType.SteamClient);
 
 					session.on('error', reject);
@@ -58,6 +60,8 @@ liveTestDescribe('LoginSession live tests', () => {
 				}));
 
 				test('EAuthTokenPlatformType.WebBrowser', () => new Promise(async (resolve, reject) => {
+					jest.setTimeout(20000);
+
 					let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
 
 					session.on('error', reject);
@@ -100,6 +104,8 @@ liveTestDescribe('LoginSession live tests', () => {
 				}));
 
 				test('EAuthTokenPlatformType.MobileApp', () => new Promise(async (resolve, reject) => {
+					jest.setTimeout(20000);
+
 					let session = new LoginSession(EAuthTokenPlatformType.MobileApp);
 
 					session.on('error', reject);
