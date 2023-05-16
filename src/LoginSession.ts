@@ -212,6 +212,7 @@ export default class LoginSession extends EventEmitter {
 		if (this._startSessionResponse) {
 			throw new Error('A session has already been started on this LoginSession object. Create a new LoginSession to start a new session.');
 		}
+		this.emit('debug', 'startWithCredentials');
 
 		this._hadRemoteInteraction = false;
 		this._steamGuardCode = details.steamGuardCode;
