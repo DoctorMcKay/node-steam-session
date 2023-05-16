@@ -12,16 +12,16 @@ main();
 
 async function main() {
   // Prompt for credentials from the console
-  // let accountName = await promptAsync('Username: ');
-  // let password = await promptAsync('Password: ', true);
-  let accountName = '009474LOWNWptqqy'
-  let password = 'JJAX48627kvail'
+  let accountName = await promptAsync('Username: ');
+  let password = await promptAsync('Password: ', true);
+  // let accountName = '9110763361'
+  // let password = '1999.521'
 
   console.log('\nIf you\'re logging into an account using email Steam Guard and you have a machine token, enter it below. Otherwise, just hit enter.');
   // let steamGuardMachineToken = await promptAsync('Machine Token: ');
 
   // Create our LoginSession and start a login session using our credentials. This session will be for a client login.
-  let session = new LoginSession(EAuthTokenPlatformType.SteamClient,{httpProxy:'http://fncuxkfd:niaxc2h1pwm7@104.223.157.244:6483'});
+  let session = new LoginSession(EAuthTokenPlatformType.SteamClient,{httpProxy: 'http://bmbxcqqo:9gfg86g3mmf0@38.153.147.14:6774'});
   let startResult = await session.startWithCredentials({
     accountName,
     password,
