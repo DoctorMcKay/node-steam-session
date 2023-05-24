@@ -13,11 +13,11 @@ import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 
 export default class LoginApprover {
-	_accessToken: string;
+	private _accessToken: string;
 	sharedSecret: string|Buffer;
 
-	_webClient: HttpClient;
-	_handler: AuthenticationClient;
+	private _webClient: HttpClient;
+	private _handler: AuthenticationClient;
 
 	constructor(accessToken: string, sharedSecret: string|Buffer, options?: ConstructorOptions) {
 		let agent:HTTPS.Agent = new HTTPS.Agent({keepAlive: true});
@@ -64,7 +64,7 @@ export default class LoginApprover {
 		this._accessToken = token;
 	}
 
-	get _secretAsBuffer() {
+	private get _secretAsBuffer() {
 		if (Buffer.isBuffer(this.sharedSecret)) {
 			return this.sharedSecret;
 		}
