@@ -35,24 +35,24 @@ const debug = createDebug('steam-session:LoginSession');
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
-	_loginTimeout: number;
+	private _loginTimeout: number;
 
-	_accountName?: string;
-	_accessToken?: string;
-	_refreshToken?: string;
+	private _accountName?: string;
+	private _accessToken?: string;
+	private _refreshToken?: string;
 
-	_platformType: EAuthTokenPlatformType;
-	_webClient: HttpClient;
-	_handler: AuthenticationClient;
+	private _platformType: EAuthTokenPlatformType;
+	private _webClient: HttpClient;
+	private _handler: AuthenticationClient;
 
-	_steamGuardCode?: string;
-	_steamGuardMachineToken?: string;
-	_startSessionResponse?: StartAuthSessionResponse;
-	_hadRemoteInteraction?: boolean;
+	private _steamGuardCode?: string;
+	private _steamGuardMachineToken?: string;
+	private _startSessionResponse?: StartAuthSessionResponse;
+	private _hadRemoteInteraction?: boolean;
 
-	_pollingStartedTime?: number;
-	_pollTimer?: Timeout;
-	_pollingCanceled?: boolean;
+	private _pollingStartedTime?: number;
+	private _pollTimer?: Timeout;
+	private _pollingCanceled?: boolean;
 
 	/**
 	 * @param {EAuthTokenPlatformType} platformType
@@ -200,7 +200,7 @@ export default class LoginSession extends EventEmitter {
 
 	get steamGuardMachineToken(): string { return this._steamGuardMachineToken; }
 
-	get _defaultWebsiteId() {
+	private get _defaultWebsiteId() {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
 				return 'Client';
@@ -216,7 +216,7 @@ export default class LoginSession extends EventEmitter {
 		}
 	}
 
-	_verifyStarted(mustHaveSteamId = false) {
+	private _verifyStarted(mustHaveSteamId = false) {
 		if (!this._startSessionResponse) {
 			throw new Error('Login session has not been started yet');
 		}
@@ -274,7 +274,7 @@ export default class LoginSession extends EventEmitter {
 		return await this._processStartSessionResponse();
 	}
 
-	async _processStartSessionResponse(): Promise<StartSessionResponse> {
+	private async _processStartSessionResponse(): Promise<StartSessionResponse> {
 		this._pollingCanceled = false;
 
 		let validActions:StartSessionResponseValidAction[] = [];
@@ -358,7 +358,7 @@ export default class LoginSession extends EventEmitter {
 		this._doPoll();
 	}
 
-	async _doPoll() {
+	private async _doPoll() {
 		if (this._pollingCanceled) {
 			return;
 		}
@@ -417,7 +417,7 @@ export default class LoginSession extends EventEmitter {
 	/**
 	 * @returns {boolean} - true if code submitted successfully, false if code wasn't valid or no code available
 	 */
-	async _attemptEmailCodeAuth(): Promise<boolean> {
+	private async _attemptEmailCodeAuth(): Promise<boolean> {
 		if (this._steamGuardCode) {
 			try {
 				await this.submitSteamGuardCode(this._steamGuardCode);
@@ -453,7 +453,7 @@ export default class LoginSession extends EventEmitter {
 		return false;
 	}
 
-	async _attemptTotpCodeAuth(): Promise<boolean> {
+	private async _attemptTotpCodeAuth(): Promise<boolean> {
 		if (this._steamGuardCode) {
 			try {
 				await this.submitSteamGuardCode(this._steamGuardCode);
