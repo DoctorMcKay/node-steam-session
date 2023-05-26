@@ -40,6 +40,7 @@ export default class LoginSession extends EventEmitter {
 	private _accountName?: string;
 	private _accessToken?: string;
 	private _refreshToken?: string;
+	private _sessionId?: string;
 
 	private _platformType: EAuthTokenPlatformType;
 	private _webClient: HttpClient;
@@ -123,6 +124,7 @@ export default class LoginSession extends EventEmitter {
 	}
 
 	get accountName(): string { return this._accountName; }
+	get sessionId(): string { return this._sessionId; }
 
 	get accessToken(): string { return this._accessToken; }
 	set accessToken(token: string) {
@@ -507,9 +509,11 @@ export default class LoginSession extends EventEmitter {
 			throw new Error('A refresh token is required to get web cookies');
 		}
 
+		this._sessionId = randomBytes(12).toString('hex');
+
 		let body = {
 			nonce: this.refreshToken,
-			sessionid: randomBytes(12).toString('hex'),
+			sessionid: this._sessionId,
 			redir: 'https://steamcommunity.com/login/home/?goto='
 		};
 
