@@ -2,7 +2,7 @@ import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import {Agent} from 'https';
 import {HttpClient} from '@doctormckay/stdlib/http';
-import VDF from 'vdf';
+import VDF from 'simple-vdf';
 import {WebSocket, FrameType as WsFrameType, State as WsState} from 'websocket13';
 import Zlib from 'zlib';
 

@@ -38,9 +38,9 @@
 		"debug": "^4.3.4",
 		"node-bignumber": "^1.2.2",
 		"protobufjs": "^7.1.0",
+		"simple-vdf": "^1.1.1",
 		"socks-proxy-agent": "^7.0.0",
 		"steamid": "^2.0.0",
-		"vdf": "^0.0.2",
 		"websocket13": "^3.0.1"
 	},
 	"devDependencies": {
