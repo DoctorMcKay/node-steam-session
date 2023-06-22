@@ -74,7 +74,7 @@ export default class LoginSession extends EventEmitter {
       agent = new SocksProxyAgent(options.socksProxy);
     }
 
-    this._webClient = new HttpClient({httpsAgent: agent});
+    this._webClient = new HttpClient({httpsAgent: agent, cookieJar: true});
 
     this._platformType = platformType;
 
@@ -587,19 +587,22 @@ export default class LoginSession extends EventEmitter {
     this.accessToken = await this._handler.generateAccessTokenForApp(this.refreshToken);
   }
 
-  getCookies(): object[] {
+  getCookies(): any[] {
     let cookies = {}
     this._webClient.cookieJar.cookies.map(e => {
       let cookie = cookies[e.domain]
       if (!cookie) {
         cookie = {
-          domain: e.domain,
         }
       }
       cookie[e.name] = e.content
       cookies[e.domain] = cookie
     })
-    return Object.keys(cookies).map(k => cookies[k])
+    return Object.keys(cookies).map(k => {
+      let ret = {}
+      ret[k] = cookies[k]
+      return ret
+    })
   }
 }
 

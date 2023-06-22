@@ -19,9 +19,10 @@ async function main() {
   // session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInN0ZWFtIiwgInN1YiI6ICI3NjU2MTE5OTQ4MTQ3Njg4NyIsICJhdWQiOiBbICJ3ZWIiLCAicmVuZXciLCAiZGVyaXZlIiBdLCAiZXhwIjogMTY5ODQwMzgwMywgIm5iZiI6IDE2NzEyNzU5ODksICJpYXQiOiAxNjc5OTE1OTg5LCAianRpIjogIjBEMkFfMjI0N0Y3QkVfQjEwNTciLCAib2F0IjogMTY3OTkxNTk4OSwgInBlciI6IDEsICJpcF9zdWJqZWN0IjogIjIwMy45MS44NS4xMTEiLCAiaXBfY29uZmlybWVyIjogIjIwMy45MS44NS4xMTEiIH0.2fucweOk403ans3YnY5yzIEDf0k8s7wkAJETenGvKx2EgDwitaH7y8FnAi7qIqHJZz6jnWK0VtCuZYkCPIERAw'
   session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInN0ZWFtIiwgInN1YiI6ICI3NjU2MTE5OTQ4MDU4OTE5MyIsICJhdWQiOiBbICJjbGllbnQiLCAid2ViIiwgInJlbmV3IiwgImRlcml2ZSIgXSwgImV4cCI6IDE3MDU4MDE2ODcsICJuYmYiOiAxNjc4Nzg4NDU5LCAiaWF0IjogMTY4NzQyODQ1OSwgImp0aSI6ICIwRDE4XzIyQkJDQUQxX0ZEMEM5IiwgIm9hdCI6IDE2ODc0Mjg0NTksICJwZXIiOiAxLCAiaXBfc3ViamVjdCI6ICIzOC4xNTMuMTQ3LjE0IiwgImlwX2NvbmZpcm1lciI6ICIzOC4xNTMuMTQ3LjE0IiB9.TTSp49gpOFg5laGtM1AjbW_UOrOlL3Kjh-iHPkatAJF_1pb48nhZ6nQPKJGTheSAe4NRndYOGLliCrz_F67CBQ'
   // session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInI6MEQxOF8yMkJCQ0FEMV9GRDBDOSIsICJzdWIiOiAiNzY1NjExOTk0ODA1ODkxOTMiLCAiYXVkIjogWyAiY2xpZW50IiwgIndlYiIgXSwgImV4cCI6IDE2ODc1MTY2ODIsICJuYmYiOiAxNjc4Nzg4NTE3LCAiaWF0IjogMTY4NzQyODUxNywgImp0aSI6ICIwRDBFXzIyQkJDQUNBX0U5RTk3IiwgIm9hdCI6IDE2ODc0Mjg0NTksICJydF9leHAiOiAxNzA1ODAxNjg3LCAicGVyIjogMCwgImlwX3N1YmplY3QiOiAiMzguMTUzLjE0Ny4xNCIsICJpcF9jb25maXJtZXIiOiAiMzguMTUzLjE0Ny4xNCIgfQ.zmHgCvSmnGphhW8DTjTEFMxKBgfRiDAcuJbhNZIZXws3dZpkYGszr5ShmtBzbBa0dFJxhXk2u3xMq8tY8ftEDg'
-  await session.refreshAccessToken();
-  console.log(`New access token: ${session.accessToken}`);
+  // await session.refreshAccessToken();
+  // console.log(`New access token: ${session.accessToken}`);
   webCookies = await session.getWebCookies()
+  webCookies = await session.getCookies()
   console.log('webCookies',webCookies)
   // @ts-ignore
   let {headers} = getDataForPlatformType(session._platformType);
@@ -33,7 +34,7 @@ async function main() {
   // }
   headers.cookie = webCookies.join(';')
   // @ts-ignore
-  let finalizeResponse = await session._webClient.request({
+  let finalizeResponse = await session.webClient.request({
     url: 'https://store.steampowered.com/account/ajaxredeemwalletcode/',
     json: body,
     headers: headers
