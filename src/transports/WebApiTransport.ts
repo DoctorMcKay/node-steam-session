@@ -1,7 +1,9 @@
 import createDebug from 'debug';
-import ITransport, {ApiRequest, ApiResponse} from './ITransport';
-import WebClient, {ResponseData} from '../WebClient';
+import {HttpClient, HttpRequestOptions} from '@doctormckay/stdlib/http';
+
 import EResult from '../enums-steam/EResult';
+
+import ITransport, {ApiRequest, ApiResponse} from './ITransport';
 import {API_HEADERS} from '../helpers';
 
 const debug = createDebug('steam-session:WebApiTransport');
@@ -19,9 +21,9 @@ export interface WebApiTransportOptions {
 }
 
 export default class WebApiTransport implements ITransport {
-	_client: WebClient;
+	_client: HttpClient;
 
-	constructor(client: WebClient) {
+	constructor(client: HttpClient) {
 		this._client = client;
 	}
 
@@ -44,25 +46,29 @@ export default class WebApiTransport implements ITransport {
 
 		debug('%s %s %o %o', method, url, queryString, form);
 
-		let result:ResponseData;
-		if (method == 'GET') {
-			result = await this._client.get(url, {queryString, headers});
-		} else if (Object.keys(form).length == 0) {
-			result = await this._client.post(url, null, {queryString, headers});
-		} else {
-			result = await this._client.postEncoded(url, form, 'multipart', {queryString, headers});
+		let requestOptions:HttpRequestOptions = {
+			method,
+			url,
+			headers,
+			queryString
+		};
+
+		if (method == 'POST' && Object.keys(form).length > 0) {
+			requestOptions.multipartForm = HttpClient.simpleObjectToMultipartForm(form);
 		}
 
-		if (result.res.statusCode < 200 || result.res.statusCode >= 300) {
-			let err:any = new Error(`WebAPI error ${result.res.statusCode}`);
-			err.code = result.res.statusCode;
+		let result = await this._client.request(requestOptions);
+
+		if (result.statusCode < 200 || result.statusCode >= 300) {
+			let err:any = new Error(`WebAPI error ${result.statusCode}`);
+			err.code = result.statusCode;
 			throw err;
 		}
 
 		let apiResponse:ApiResponse = {};
 
-		let eresultHeader = result.res.headers['x-eresult'];
-		let errorMessageHeader = result.res.headers['x-error_message'];
+		let eresultHeader = result.headers['x-eresult'];
+		let errorMessageHeader = result.headers['x-error_message'];
 
 		if (typeof eresultHeader == 'string') {
 			apiResponse.result = parseInt(eresultHeader) as EResult;
@@ -72,8 +78,10 @@ export default class WebApiTransport implements ITransport {
 			apiResponse.errorMessage = errorMessageHeader;
 		}
 
-		if (result.body && result.body.length > 0) {
-			apiResponse.responseData = result.body;
+		let resultBody:any = result.jsonBody || result.textBody || result.rawBody;
+		let isMeaningfulJsonBody = result.jsonBody && Object.keys(result.jsonBody).length > 0;
+		if (resultBody && (isMeaningfulJsonBody || resultBody.length > 0)) {
+			apiResponse.responseData = resultBody;
 		}
 
 		return apiResponse;

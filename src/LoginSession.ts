@@ -1,4 +1,5 @@
 import StdLib from '@doctormckay/stdlib';
+import {HttpClient} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import EventEmitter from 'events';
@@ -8,7 +9,6 @@ import SteamID from 'steamid';
 
 import AuthenticationClient from './AuthenticationClient';
 import {API_HEADERS, decodeJwt, eresultError} from './helpers';
-import WebClient from './WebClient';
 
 import WebApiTransport from './transports/WebApiTransport';
 import WebSocketCMTransport from './transports/WebSocketCMTransport';
@@ -35,24 +35,24 @@ const debug = createDebug('steam-session:LoginSession');
 import Timeout = NodeJS.Timeout;
 
 export default class LoginSession extends EventEmitter {
-	loginTimeout: number;
+	private _loginTimeout: number;
 
-	_accountName?: string;
-	_accessToken?: string;
-	_refreshToken?: string;
+	private _accountName?: string;
+	private _accessToken?: string;
+	private _refreshToken?: string;
 
-	_platformType: EAuthTokenPlatformType;
-	_webClient: WebClient;
-	_handler: AuthenticationClient;
+	private _platformType: EAuthTokenPlatformType;
+	private _webClient: HttpClient;
+	private _handler: AuthenticationClient;
 
-	_steamGuardCode?: string;
-	_steamGuardMachineToken?: string;
-	_startSessionResponse?: StartAuthSessionResponse;
-	_hadRemoteInteraction?: boolean;
+	private _steamGuardCode?: string;
+	private _steamGuardMachineToken?: string;
+	private _startSessionResponse?: StartAuthSessionResponse;
+	private _hadRemoteInteraction?: boolean;
 
-	_pollingStartedTime?: number;
-	_pollTimer?: Timeout;
-	_pollingCanceled?: boolean;
+	private _pollingStartedTime?: number;
+	private _pollTimer?: Timeout;
+	private _pollingCanceled?: boolean;
 
 	/**
 	 * @param {EAuthTokenPlatformType} platformType
@@ -63,18 +63,18 @@ export default class LoginSession extends EventEmitter {
 
 		options = options || {};
 
-		let agent = new HTTPS.Agent({keepAlive: true});
+		let agent:HTTPS.Agent = new HTTPS.Agent({keepAlive: true});
 		if (options.httpProxy && options.socksProxy) {
 			throw new Error('Cannot specify both httpProxy and socksProxy at the same time');
 		}
 
 		if (options.httpProxy) {
-			agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy);
+			agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy) as HTTPS.Agent;
 		} else if (options.socksProxy) {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new WebClient({agent});
+		this._webClient = new HttpClient({httpsAgent: agent});
 
 		this._platformType = platformType;
 
@@ -95,6 +95,18 @@ export default class LoginSession extends EventEmitter {
 		this.on('debug', debug);
 
 		this.loginTimeout = 30000;
+	}
+
+	get loginTimeout(): number {
+		return this._loginTimeout;
+	}
+
+	set loginTimeout(value: number) {
+		if (this._pollingStartedTime) {
+			throw new Error('Setting loginTimeout after polling has already started is ineffective');
+		}
+
+		this._loginTimeout = value;
 	}
 
 	get steamID(): SteamID {
@@ -122,7 +134,12 @@ export default class LoginSession extends EventEmitter {
 		let decoded = decodeJwt(token);
 
 		try { new SteamID(decoded.sub); } catch {
-			throw new Error('Not a valid Steam access token');
+			throw new Error('Not a valid Steam token');
+		}
+
+		let aud = decoded.aud || [];
+		if (aud.includes('derive')) {
+			throw new Error('The provided token is a refresh token, not an access token');
 		}
 
 		if (
@@ -154,7 +171,12 @@ export default class LoginSession extends EventEmitter {
 		let decoded = decodeJwt(token);
 
 		try { new SteamID(decoded.sub); } catch {
-			throw new Error('Not a valid Steam access token');
+			throw new Error('Not a valid Steam token');
+		}
+
+		let aud = decoded.aud || [];
+		if (!aud.includes('derive')) {
+			throw new Error('The provided token is an access token, not a refresh token');
 		}
 
 		if (
@@ -178,7 +200,7 @@ export default class LoginSession extends EventEmitter {
 
 	get steamGuardMachineToken(): string { return this._steamGuardMachineToken; }
 
-	get _defaultWebsiteId() {
+	private get _defaultWebsiteId() {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
 				return 'Client';
@@ -194,7 +216,7 @@ export default class LoginSession extends EventEmitter {
 		}
 	}
 
-	_verifyStarted(mustHaveSteamId = false) {
+	private _verifyStarted(mustHaveSteamId = false) {
 		if (!this._startSessionResponse) {
 			throw new Error('Login session has not been started yet');
 		}
@@ -253,7 +275,7 @@ export default class LoginSession extends EventEmitter {
 		return await this._processStartSessionResponse();
 	}
 
-	async _processStartSessionResponse(): Promise<StartSessionResponse> {
+	private async _processStartSessionResponse(): Promise<StartSessionResponse> {
 		this._pollingCanceled = false;
 
 		let validActions:StartSessionResponseValidAction[] = [];
@@ -337,7 +359,7 @@ export default class LoginSession extends EventEmitter {
 		this._doPoll();
 	}
 
-	async _doPoll() {
+	private async _doPoll() {
 		if (this._pollingCanceled) {
 			return;
 		}
@@ -362,8 +384,11 @@ export default class LoginSession extends EventEmitter {
 			pollResponse = await this._handler.pollLoginStatus(this._startSessionResponse);
 			this.emit('debug', 'poll response', pollResponse);
 		} catch (ex) {
-			this.emit('error', ex);
-			this.cancelLoginAttempt();
+			// If we got an error, but we've already canceled polling, just do nothing.
+			if (!this._pollingCanceled) {
+				this.emit('error', ex);
+				this.cancelLoginAttempt();
+			}
 			return;
 		}
 
@@ -393,7 +418,7 @@ export default class LoginSession extends EventEmitter {
 	/**
 	 * @returns {boolean} - true if code submitted successfully, false if code wasn't valid or no code available
 	 */
-	async _attemptEmailCodeAuth(): Promise<boolean> {
+	private async _attemptEmailCodeAuth(): Promise<boolean> {
 		if (this._steamGuardCode) {
 			try {
 				await this.submitSteamGuardCode(this._steamGuardCode);
@@ -429,7 +454,7 @@ export default class LoginSession extends EventEmitter {
 		return false;
 	}
 
-	async _attemptTotpCodeAuth(): Promise<boolean> {
+	private async _attemptTotpCodeAuth(): Promise<boolean> {
 		if (this._steamGuardCode) {
 			try {
 				await this.submitSteamGuardCode(this._steamGuardCode);
@@ -490,38 +515,55 @@ export default class LoginSession extends EventEmitter {
 		};
 
 		debug('POST https://login.steampowered.com/jwt/finalizelogin %o', body);
-		let finalizeResponse = await this._webClient.postEncoded('https://login.steampowered.com/jwt/finalizelogin', body, 'multipart', {
-			headers: API_HEADERS
+		let finalizeResponse = await this._webClient.request({
+			method: 'POST',
+			url: 'https://login.steampowered.com/jwt/finalizelogin',
+			headers: API_HEADERS,
+			multipartForm: HttpClient.simpleObjectToMultipartForm(body)
 		});
 
-		if (finalizeResponse.body && finalizeResponse.body.error) {
-			throw eresultError(finalizeResponse.body.error);
+		if (finalizeResponse.jsonBody && finalizeResponse.jsonBody.error) {
+			throw eresultError(finalizeResponse.jsonBody.error);
 		}
 
-		if (!finalizeResponse.body || !finalizeResponse.body.transfer_info) {
-			throw new Error('Malformed login response');
+		if (!finalizeResponse.jsonBody || !finalizeResponse.jsonBody.transfer_info) {
+			let err:any = new Error('Malformed login response');
+			err.responseBody = finalizeResponse.jsonBody;
+			throw err;
 		}
 
 		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
 		// successful transfer (hence the usage of promsieAny), but we execute them all for robustness in case one fails.
 		// As long as one succeeds, we're good.
-		let transfers = finalizeResponse.body.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
+		let transfers = finalizeResponse.jsonBody.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
 			let body = {steamID: this.steamID.getSteamID64(), ...params};
 			debug('POST %s %o', url, body);
 
-			let result = await this._webClient.postEncoded(url, body, 'multipart');
-			if (!result.res.headers || !result.res.headers['set-cookie'] || result.res.headers['set-cookie'].length == 0) {
+			let result = await this._webClient.request({
+				method: 'POST',
+				url,
+				multipartForm: HttpClient.simpleObjectToMultipartForm(body)
+			});
+			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
 				return reject(new Error('No Set-Cookie header in result'));
 			}
 
-			if (!result.res.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
+			if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
 				return reject(new Error('No steamLoginSecure cookie in result'));
 			}
 
-			resolve(result.res.headers['set-cookie'].map(c => c.split(';')[0].trim()));
+			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
 		}));
 
 		return await promiseAny(transfers);
+	}
+
+	async refreshAccessToken(): Promise<void> {
+		if (!this.refreshToken) {
+			throw new Error('A refresh token is required to get a new access token');
+		}
+
+		this.accessToken = await this._handler.generateAccessTokenForApp(this.refreshToken);
 	}
 }
 

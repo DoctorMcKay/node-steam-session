@@ -187,6 +187,9 @@ this is always populated when [`authenticated`](#authenticated) fires).
 A `number` specifying the time, in milliseconds, before a login attempt will [`timeout`](#timeout). The timer begins
 after [`polling`](#polling) begins.
 
+If you attempt to set this property after [`polling`](#polling) has already been emitted, an Error will be thrown since
+setting this property after that point has no effect.
+
 ### accountName
 
 **Read-only.** A `string` containing your account name. This is populated just before the [`authenticated`](#authenticated)
@@ -201,8 +204,20 @@ do anything useful.
 Setting this property will throw an Error if:
 
 - You set it to a token that isn't well-formed, or
+- You set it to a refresh token rather than an access token, or
 - You have already called [`startWithCredentials`](#startwithcredentialsdetails) and you set it to a token that doesn't belong to the same account, or
 - You have already set [`refreshToken`](#refreshtoken) and you set this to a token that doesn't belong to the same account as the refresh token
+
+Access tokens can't be used for much. You can use them with a few undocumented WebAPIs like
+[IFriendsListService/GetFriendsList](https://steamapi.xpaw.me/#IFriendsListService/GetFriendsList) by passing the access
+token as an access_token query string parameter. For example:
+
+    https://api.steampowered.com/IFriendsListService/GetFriendsList/v1/?access_token=eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...
+
+As of time of writing (2023-04-24), it appears that you can also use access tokens with regular published API methods,
+for example:
+
+	https://api.steampowered.com/ISteamUserStats/GetNumberOfCurrentPlayers/v1/?appid=440&access_token=eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...
 
 ### refreshToken
 
@@ -212,6 +227,7 @@ fired. You can also assign a refresh token to this property if you already have 
 Setting this property will throw an Error if:
 
 - You set it to a token that isn't well-formed, or
+- You set it to an access token rather than a refresh token, or
 - You have already called [`startWithCredentials`](#startwithcredentialsdetails) and you set it to a token that doesn't belong to the same account, or
 - You have already set [`accessToken`](#accesstoken) and you set this to a token that doesn't belong to the same account as the access token
 
@@ -377,6 +393,39 @@ On failure, the Promise will be rejected. Depending on the nature of the failure
 
 On success, the Promise will be resolved with an array of strings. Each string contains a cookie, e.g.
 `'steamLoginSecure=blahblahblahblah'`.
+
+Here's an example of how you can get new web cookies when you already have a valid refresh token:
+
+```js
+import {LoginSession, EAuthTokenPlatformType} from 'steam-session';
+
+let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
+session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...';
+let cookies = await session.getWebCookies();
+```
+
+### refreshAccessToken()
+
+As long as a [`refreshToken`](#refreshtoken) is set, you can call this method to obtain a new access token.
+Returns a Promise.
+
+On failure, the Promise will be rejected. An EResult will be available under the `eresult` property of the Error object.
+
+On success, the Promise will be resolved with no value. You can then read the access token from the LoginSession's
+accessToken property.
+
+```js
+import {LoginSession, EAuthTokenPlatformType} from 'steam-session';
+
+let session = new LoginSession(EAuthTokenPlatformType.WebBrowser);
+session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...';
+await session.refreshAccessToken();
+
+console.log(`New access token: ${session.accessToken}`);
+```
+
+As of 2023-04-24, this method works for EAuthTokenPlatformType MobileApp and SteamClient, but using WebBrowser will fail
+with response `AccessDenied`.
 
 ## Events
 

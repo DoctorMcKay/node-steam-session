@@ -1,17 +1,18 @@
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
-import VDF from 'vdf';
-import WS13 from 'websocket13';
+import {Agent} from 'https';
+import {HttpClient} from '@doctormckay/stdlib/http';
+import VDF from 'simple-vdf';
+import {WebSocket, FrameType as WsFrameType, State as WsState} from 'websocket13';
 import Zlib from 'zlib';
 
-import ITransport, {ApiRequest, ApiResponse} from './ITransport';
 import EMsg from '../enums-steam/EMsg';
+import EResult from '../enums-steam/EResult';
+
 import Protos from '../protobuf-generated/load';
 import {CMsgClientHello, CMsgClientLogonResponse, CMsgMulti, CMsgProtoBufHeader} from '../protobuf-generated/types';
-import EResult from '../enums-steam/EResult';
+import ITransport, {ApiRequest, ApiResponse} from './ITransport';
 import {eresultError} from '../helpers';
-import WebClient from '../WebClient';
-import {Agent} from 'https';
 
 const debug = createDebug('steam-session:WebSocketCMTransport');
 const debugVerbose = debug.extend('verbose');
@@ -30,13 +31,14 @@ interface CmServer {
 }
 
 export default class WebSocketCMTransport implements ITransport {
-	_webClient: WebClient;
+	_connectTimeout = 1000;
+	_webClient: HttpClient;
 	_agent: Agent;
 	_websocket: any;
 	_jobs: any;
 	_clientSessionId = 0;
 
-	constructor(webClient: WebClient, agent: Agent) {
+	constructor(webClient: HttpClient, agent: Agent) {
 		this._webClient = webClient;
 		this._agent = agent;
 		this._websocket = null;
@@ -59,7 +61,7 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	close() {
-		if (this._websocket && this._websocket.state == WS13.State.Connected) {
+		if (this._websocket && this._websocket.state == WsState.Connected) {
 			this._websocket.disconnect();
 		}
 	}
@@ -67,7 +69,7 @@ export default class WebSocketCMTransport implements ITransport {
 	_connectToCM(): Promise<void> {
 		return new Promise(async (resolve, reject) => {
 			try {
-				if (this._websocket && this._websocket.state == WS13.State.Connecting) {
+				if (this._websocket && this._websocket.state == WsState.Connecting) {
 					// Just wait for the previous connection attempt to succeed
 
 					let connected, error;
@@ -99,13 +101,28 @@ export default class WebSocketCMTransport implements ITransport {
 				debug(`Connecting to ${cm.endpoint}`);
 
 				let resolved = false;
-				this._websocket = new WS13.WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
+				this._websocket = new WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
 					connection: {
 						agent: this._agent
 					}
 				});
 
+				this._websocket.setTimeout(this._connectTimeout);
+				this._websocket.on('timeout', () => {
+					if (resolved) {
+						return;
+					}
+
+					debug(`Connecting to ${cm.endpoint} timed out after ${this._connectTimeout} ms`);
+					this._connectTimeout = Math.min(10000, this._connectTimeout * 2);
+
+					this._websocket.disconnect();
+					this._connectToCM().then(resolve).catch(reject);
+				});
+
 				this._websocket.on('connected', async () => {
+					this._websocket.setTimeout(0);
+
 					debug(`Connected to ${cm.endpoint}`);
 
 					let hello: CMsgClientHello = {protocol_version: PROTOCOL_VERSION};
@@ -129,7 +146,7 @@ export default class WebSocketCMTransport implements ITransport {
 				});
 
 				this._websocket.on('message', (type, msg) => {
-					if (type != WS13.FrameType.Data.Binary) {
+					if (type != WsFrameType.Data.Binary) {
 						debug(`Received unexpected frame type from ${cm.endpoint}: ${type.toString(16)}`);
 						return;
 					}
@@ -145,7 +162,9 @@ export default class WebSocketCMTransport implements ITransport {
 	async _fetchCMList(): Promise<CmServer[]> {
 		debug('Fetching CM list');
 
-		let result = await this._webClient.get('https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf', {
+		let result = await this._webClient.request({
+			method: 'GET',
+			url: 'https://api.steampowered.com/ISteamDirectory/GetCMListForConnect/v0001/?cellid=0&format=vdf',
 			headers: {
 				'user-agent': 'Valve/Steam HTTP Client 1.0',
 				'accept-charset': 'ISO-8859-1,utf-8,*;q=0.7',
@@ -153,13 +172,13 @@ export default class WebSocketCMTransport implements ITransport {
 			}
 		});
 
-		if (result.res.statusCode != 200) {
+		if (result.statusCode != 200) {
 			let err:any = new Error('Unable to fetch CM list');
-			err.code = result.res.statusCode;
+			err.code = result.statusCode;
 			throw err;
 		}
 
-		let parsedResult = VDF.parse(result.body);
+		let parsedResult = VDF.parse(result.textBody);
 		if (!parsedResult.response || !parsedResult.response.serverlist) {
 			throw new Error('Malformed CM list response');
 		}
@@ -234,7 +253,7 @@ export default class WebSocketCMTransport implements ITransport {
 				let logOnResponse: CMsgClientLogonResponse = Protos.CMsgClientLogonResponse.toObject(decodedLogOnResponse, {longs: String});
 				debug(`Received ClientLogOnResponse with result: ${EResult[logOnResponse.eresult] || logOnResponse.eresult}`);
 
-				if (this._websocket.state == WS13.State.Connected) {
+				if (this._websocket.state == WsState.Connected) {
 					this._websocket.disconnect();
 					this._websocket = null;
 				}
@@ -285,7 +304,7 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	async _sendMessage(eMsg: EMsg, body: Buffer, serviceMethodName?: string): Promise<any> {
-		if (!this._websocket || this._websocket.state != WS13.State.Connected) {
+		if (!this._websocket || this._websocket.state != WsState.Connected) {
 			await this._connectToCM();
 		}
 
@@ -306,7 +325,7 @@ export default class WebSocketCMTransport implements ITransport {
 
 				let timeout = setTimeout(() => {
 					reject(new Error(`Request ${serviceMethodName} timed out`));
-				}, 2000);
+				}, 5000);
 
 				this._jobs[jobId] = {resolve, reject, timeout};
 			} else {
