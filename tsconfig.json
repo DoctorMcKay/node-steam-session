@@ -7,6 +7,7 @@
 		"esModuleInterop": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
+		"allowSyntheticDefaultImports": true,
 		"inlineSourceMap": true,
 		"skipLibCheck": true,
 		"declaration": true,

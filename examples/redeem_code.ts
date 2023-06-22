@@ -8,18 +8,22 @@ let webCookies = [
 ]
 
 async function main() {
-  let d = getSpoofedHostname()
+  // let d = getSpoofedHostname()
 
   let body = {
     wallet_code: '4FHXX-736JH-D74PF',
     sessionid: randomBytes(12).toString('hex')
   }
-  let session = new LoginSession(EAuthTokenPlatformType.WebBrowser, {httpProxy: 'http://fncuxkfd:niaxc2h1pwm7@104.223.157.244:6483'});
+  let session = new LoginSession(EAuthTokenPlatformType.SteamClient, {httpProxy: 'http://bmbxcqqo:9gfg86g3mmf0@38.153.147.14:6774'});
 
   // session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInN0ZWFtIiwgInN1YiI6ICI3NjU2MTE5OTQ4MTQ3Njg4NyIsICJhdWQiOiBbICJ3ZWIiLCAicmVuZXciLCAiZGVyaXZlIiBdLCAiZXhwIjogMTY5ODQwMzgwMywgIm5iZiI6IDE2NzEyNzU5ODksICJpYXQiOiAxNjc5OTE1OTg5LCAianRpIjogIjBEMkFfMjI0N0Y3QkVfQjEwNTciLCAib2F0IjogMTY3OTkxNTk4OSwgInBlciI6IDEsICJpcF9zdWJqZWN0IjogIjIwMy45MS44NS4xMTEiLCAiaXBfY29uZmlybWVyIjogIjIwMy45MS44NS4xMTEiIH0.2fucweOk403ans3YnY5yzIEDf0k8s7wkAJETenGvKx2EgDwitaH7y8FnAi7qIqHJZz6jnWK0VtCuZYkCPIERAw'
-  session.refreshToken ='eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInN0ZWFtIiwgInN1YiI6ICI3NjU2MTE5OTQ0NjQ5MzI1MSIsICJhdWQiOiBbICJ3ZWIiLCAicmVuZXciLCAiZGVyaXZlIiBdLCAiZXhwIjogMTY5ODg2NTEwNiwgIm5iZiI6IDE2NzE5Njg0ODQsICJpYXQiOiAxNjgwNjA4NDg0LCAianRpIjogIjE3NDJfMjI1MEYxNENfODRGMzYiLCAib2F0IjogMTY4MDYwODQ4NCwgInBlciI6IDEsICJpcF9zdWJqZWN0IjogIjE4Ni4xNzkuMjMuMTc4IiwgImlwX2NvbmZpcm1lciI6ICIxMDQuMjIzLjE3MS4yMzciIH0.-pVLjr2hUliuo3L-pyp4kJJV3x1dOjOqY6Wn38Giqc0hw4lEd-eQA4r4j7RC2c_HAXxhB0TUdyNZD5eIYG8sBw'
+  session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInN0ZWFtIiwgInN1YiI6ICI3NjU2MTE5OTQ4MDU4OTE5MyIsICJhdWQiOiBbICJjbGllbnQiLCAid2ViIiwgInJlbmV3IiwgImRlcml2ZSIgXSwgImV4cCI6IDE3MDU4MDE2ODcsICJuYmYiOiAxNjc4Nzg4NDU5LCAiaWF0IjogMTY4NzQyODQ1OSwgImp0aSI6ICIwRDE4XzIyQkJDQUQxX0ZEMEM5IiwgIm9hdCI6IDE2ODc0Mjg0NTksICJwZXIiOiAxLCAiaXBfc3ViamVjdCI6ICIzOC4xNTMuMTQ3LjE0IiwgImlwX2NvbmZpcm1lciI6ICIzOC4xNTMuMTQ3LjE0IiB9.TTSp49gpOFg5laGtM1AjbW_UOrOlL3Kjh-iHPkatAJF_1pb48nhZ6nQPKJGTheSAe4NRndYOGLliCrz_F67CBQ'
+  // session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInI6MEQxOF8yMkJCQ0FEMV9GRDBDOSIsICJzdWIiOiAiNzY1NjExOTk0ODA1ODkxOTMiLCAiYXVkIjogWyAiY2xpZW50IiwgIndlYiIgXSwgImV4cCI6IDE2ODc1MTY2ODIsICJuYmYiOiAxNjc4Nzg4NTE3LCAiaWF0IjogMTY4NzQyODUxNywgImp0aSI6ICIwRDBFXzIyQkJDQUNBX0U5RTk3IiwgIm9hdCI6IDE2ODc0Mjg0NTksICJydF9leHAiOiAxNzA1ODAxNjg3LCAicGVyIjogMCwgImlwX3N1YmplY3QiOiAiMzguMTUzLjE0Ny4xNCIsICJpcF9jb25maXJtZXIiOiAiMzguMTUzLjE0Ny4xNCIgfQ.zmHgCvSmnGphhW8DTjTEFMxKBgfRiDAcuJbhNZIZXws3dZpkYGszr5ShmtBzbBa0dFJxhXk2u3xMq8tY8ftEDg'
+  await session.refreshAccessToken();
+  console.log(`New access token: ${session.accessToken}`);
   webCookies = await session.getWebCookies()
-
+  console.log('webCookies',webCookies)
+  // @ts-ignore
   let {headers} = getDataForPlatformType(session._platformType);
   // let headers = {
   //   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
@@ -28,12 +32,14 @@ async function main() {
   //   cookie:''
   // }
   headers.cookie = webCookies.join(';')
-
-  let finalizeResponse = await session._webClient.postEncoded('https://store.steampowered.com/account/ajaxredeemwalletcode/', body, 'multipart', {
+  // @ts-ignore
+  let finalizeResponse = await session._webClient.request({
+    url: 'https://store.steampowered.com/account/ajaxredeemwalletcode/',
+    json: body,
     headers: headers
   });
 
-  console.log(finalizeResponse.body)
+  console.log(finalizeResponse.jsonBody)
 
 }
 
