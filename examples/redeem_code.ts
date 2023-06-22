@@ -1,7 +1,8 @@
 import {randomBytes} from "crypto";
 import {EAuthTokenPlatformType, LoginSession} from "../src";
 import {getDataForPlatformType, getSpoofedHostname} from "../src/helpers";
-
+import {Cookie, CookieJar, HttpClient} from '@doctormckay/stdlib/http';
+// console.log(new Cookie({} as any))
 let webCookies = [
   'steamCountry=US%7Ce3a429901b56974b144d3b420e1973d0',
   'steamLoginSecure=76561199481476887%7C%7CeyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInI6MEQyN18yMjQ3RjdBMl9GNTZDMyIsICJzdWIiOiAiNzY1NjExOTk0ODE0NzY4ODciLCAiYXVkIjogWyAiY2xpZW50IiwgIndlYiIgXSwgImV4cCI6IDE2Nzk5MTkxNTMsICJuYmYiOiAxNjcxMTkyNTQyLCAiaWF0IjogMTY3OTgzMjU0MiwgImp0aSI6ICIwRDJEXzIyNDdGNzE0XzY1MjcwIiwgIm9hdCI6IDE2Nzk4MzI1NDAsICJydF9leHAiOiAxNjk3ODc4MzYyLCAicGVyIjogMCwgImlwX3N1YmplY3QiOiAiMTA0LjIyMy4xNTcuMjQ0IiwgImlwX2NvbmZpcm1lciI6ICIxMDQuMjIzLjE1Ny4yNDQiIH0.iOXQqpqwlHA1Z8lYlTGsdPpW_S1EYHX4rbBXTv6OVFyd-bg9KmIJCcmM6bIT2zyd13gcgAqSIV69jQ8J6nzFDw'

@@ -1,5 +1,5 @@
 import StdLib from '@doctormckay/stdlib';
-import {HttpClient} from '@doctormckay/stdlib/http';
+import {Cookie, CookieJar, HttpClient} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import EventEmitter from 'events';
@@ -54,6 +54,8 @@ export default class LoginSession extends EventEmitter {
   private _pollTimer?: Timeout;
   private _pollingCanceled?: boolean;
 
+  public agent: any;
+
   /**
    * @param {EAuthTokenPlatformType} platformType
    * @param {ConstructorOptions} [options]
@@ -73,6 +75,7 @@ export default class LoginSession extends EventEmitter {
     } else if (options.socksProxy) {
       agent = new SocksProxyAgent(options.socksProxy);
     }
+    this.agent = agent
 
     this._webClient = new HttpClient({httpsAgent: agent, cookieJar: true});
 
@@ -587,17 +590,60 @@ export default class LoginSession extends EventEmitter {
     this.accessToken = await this._handler.generateAccessTokenForApp(this.refreshToken);
   }
 
-  getCookies(): any[] {
-    let cookies = {}
+  async getCookies(): Promise<any[]> {
+    let cookies: { [name: string]: object } = {}
     this._webClient.cookieJar.cookies.map(e => {
       let cookie = cookies[e.domain]
       if (!cookie) {
-        cookie = {
-        }
+        cookie = {}
       }
       cookie[e.name] = e.content
       cookies[e.domain] = cookie
     })
+    let domains = ['steamcommunity.com', 'store.steampowered.com', 'checkout.steampowered.com']
+    let result = await Promise.all(domains.map(domain => new Promise(async (resolve, reject) => {
+      let cookie = cookies[domain]
+      if (!cookie) {
+        let login_cookie = cookies['login.steampowered.com']
+        let cookieJar = new CookieJar()
+        Object.keys(login_cookie).map(k => {
+          cookieJar.add(new Cookie({
+            expires: undefined,
+            secure: false,
+            domain: 'login.steampowered.com',
+            name: k,
+            content: login_cookie[k],
+            path: '/'
+          },), 'login.steampowered.com')
+        })
+        // console.log('cookieJar',cookieJar.cookies)
+        let webClient = new HttpClient({httpsAgent: this.agent, cookieJar: cookieJar});
+        let result = await webClient.request({
+          url: 'https://login.steampowered.com/jwt/refresh',
+          method: 'post',
+          followRedirects: true,
+          multipartForm: HttpClient.simpleObjectToMultipartForm({
+            redir: `https://${domain}/`
+          })
+        }).catch((err)=>{
+          reject(err)
+        })
+        let cookie = {}
+        webClient.cookieJar.cookies.map(e => {
+          cookie[e.name] = e.content
+        })
+        delete cookie['steamRefresh_steam']
+        cookies[domain] = cookie
+        // console.log('cookie:', cookie)
+        resolve(cookie)
+      }else {
+        resolve({})
+      }
+    })))
+    // console.log('result', result)
+
+    // console.log('cookies', cookies)
+
     return Object.keys(cookies).map(k => {
       let ret = {}
       ret[k] = cookies[k]
