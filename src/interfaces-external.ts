@@ -13,24 +13,77 @@ import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHisto
 import ITransport from './transports/ITransport';
 
 export interface ConstructorOptions {
+	/**
+	 * An `ITransport` instance, if you need to specify a custom transport. If omitted, defaults to a
+	 * `WebSocketCMTransport` instance for `SteamClient` platform types, and a `WebApiTransport` instance for all other
+	 * platform types. In all likelihood, you don't need to use this.
+	 */
 	transport?: ITransport,
+
+	/**
+	 * A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
+	 */
 	socksProxy?: string,
+
+	/**
+	 * A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
+	 */
 	httpProxy?: string
 }
 
 export interface StartLoginSessionWithCredentialsDetails {
+	/**
+	 * Your Steam account's login name.
+	 */
 	accountName: string;
+
+	/**
+	 * Your Steam account password.
+	 */
 	password: string;
+
+	/**
+	 * Optional. A value from {@link ESessionPersistence}. Defaults to {@link ESessionPersistence.Persistent}.
+	 */
 	persistence?: ESessionPersistence;
+
+	/**
+	 * Optional. If you have a valid Steam Guard machine token, supplying it here will allow you to bypass email code verification.
+	 */
 	steamGuardMachineToken?: string|Buffer;
+
+	/**
+	 * Optional. If you have a valid Steam Guard code (either email or TOTP), supplying it here will attempt to use it during login.
+	 */
 	steamGuardCode?: string;
 }
 
 export interface StartSessionResponse {
+	/**
+	 * If this is a response to {@link steam-session.LoginSession.startWithCredentials}:
+	 *
+	 * A boolean indicating whether action is required from you to continue this login attempt.
+	 * If false, you should expect for {@link steam-session.LoginSession.authenticated} to be emitted shortly.
+	 */
 	actionRequired: boolean;
+
+	/**
+	 * If this is a response to {@link steam-session.LoginSession.startWithCredentials}:
+	 *
+	 * If `actionRequired` is true, this is an array of objects indicating which actions you could take to continue this
+	 * login attempt. Each object has these properties:
+	 *
+	 * - {@link StartSessionResponseValidAction.type} - A value from {@link EAuthSessionGuardType}
+	 * - {@link StartSessionResponseValidAction.detail} - An optional string containing more details about this guard option. Right now, the only known use
+	 *    for this is that it contains your email address' domain for {@link EAuthSessionGuardType.EmailCode}.
+	 */
 	validActions?: StartSessionResponseValidAction[];
 
-	// The following is for QR logins
+	/**
+	 * If this is a response to {@link steam-session.LoginSession.startWithQR}:
+	 *
+	 * A string containing the URL that should be encoded into a QR code and then scanned with the Steam mobile app.
+	 */
 	qrChallengeUrl?: string;
 }
 
