@@ -31,7 +31,8 @@
 		"lint": "npx eslint . --ext .js,.jsx,.ts,.tsx",
 		"test": "jest",
 		"generate-enums": "node scripts/generate-enums.js",
-		"generate-protos": "node scripts/generate-protos.js"
+		"generate-protos": "node scripts/generate-protos.js",
+		"build-doc": "typedoc --cacheBust --out docs src/index.ts src/interfaces-external.ts"
 	},
 	"dependencies": {
 		"@doctormckay/stdlib": "^2.4.1",
@@ -54,6 +55,7 @@
 		"steam-totp": "^2.1.2",
 		"ts-jest": "^28.0.8",
 		"ts-node": "^10.9.1",
+		"typedoc": "^0.24.8",
 		"typescript": "^4.8.2"
 	},
 	"engines": {
