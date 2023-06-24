@@ -61,6 +61,9 @@ interface LoginSessionEvents {
  * ```
  *
  * The {@link LoginSession} class is the primary way to interact with steam-session.
+ *
+ * @see Example: [login-with-password.ts](https://github.com/DoctorMcKay/node-steam-session/blob/master/examples/login-with-password.ts)
+ * @see Example: [login-with-qr.ts](https://github.com/DoctorMcKay/node-steam-session/blob/master/examples/login-with-qr.ts)
  */
 export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	private _loginTimeout: number;
