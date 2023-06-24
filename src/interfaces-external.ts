@@ -70,7 +70,7 @@ export interface StartSessionResponse {
 	/**
 	 * If this is a response to {@link steam-session.LoginSession.startWithCredentials}:
 	 *
-	 * If `actionRequired` is true, this is an array of objects indicating which actions you could take to continue this
+	 * If {@link actionRequired} is true, this is an array of objects indicating which actions you could take to continue this
 	 * login attempt. Each object has these properties:
 	 *
 	 * - {@link StartSessionResponseValidAction.type} - A value from {@link EAuthSessionGuardType}

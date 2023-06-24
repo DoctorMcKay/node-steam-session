@@ -2,10 +2,10 @@ import StdLib from '@doctormckay/stdlib';
 import {HttpClient} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
-import EventEmitter from 'events';
 import HTTPS from 'https';
 import {SocksProxyAgent} from 'socks-proxy-agent';
 import SteamID from 'steamid';
+import {TypedEmitter} from 'tiny-typed-emitter';
 
 import AuthenticationClient from './AuthenticationClient';
 import {API_HEADERS, decodeJwt, eresultError} from './helpers';
@@ -35,6 +35,21 @@ const debug = createDebug('steam-session:LoginSession');
 import Timeout = NodeJS.Timeout;
 
 /**
+ * Unfortunately, IDE intellisense and the typedoc generator have two different means of defining events.
+ * So, if an event is added, you need to add it both here and at the bottom of LoginSession as a static property.
+ */
+interface LoginSessionEvents {
+	debug: (...any) => void,
+	'debug-handler': (...any) => void,
+	polling: () => void,
+	authenticated: () => void,
+	timeout: () => void,
+	error: (Error) => void,
+	remoteInteraction: () => void,
+	steamGuardMachineToken: () => void
+}
+
+/**
  * Using CommonJS:
  * ```js
  * const {LoginSession} = require('steam-session');
@@ -45,9 +60,9 @@ import Timeout = NodeJS.Timeout;
  * import {LoginSession} from 'steam-session';
  * ```
  *
- * The `LoginSession` class is the primary way to interact with steam-session.
+ * The {@link LoginSession} class is the primary way to interact with steam-session.
  */
-export default class LoginSession extends EventEmitter {
+export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	private _loginTimeout: number;
 
 	private _accountName?: string;
@@ -277,7 +292,7 @@ export default class LoginSession extends EventEmitter {
 
 	/**
 	 * **Read-only.** A `string` containing your Steam Guard machine token. This is populated when you pass a `steamGuardMachineToken` to
-	 * {@link startWithCredentials}, or just before the {@link steamGuardMachineToken:event} event is emitted.
+	 * {@link startWithCredentials}, or just before the {@link steamGuardMachineToken} event is emitted.
 	 */
 	get steamGuardMachineToken(): string { return this._steamGuardMachineToken; }
 
@@ -812,6 +827,88 @@ export default class LoginSession extends EventEmitter {
 
 		this.accessToken = await this._handler.generateAccessTokenForApp(this.refreshToken);
 	}
+
+	////////////////////////////
+	// DOCS FOR EVENTS FOLLOW //
+	////////////////////////////
+
+	/**
+	 * This event is emitted once we start polling Steam to periodically check if the login attempt has succeeded or not.
+	 * Polling starts when any of these conditions are met:
+	 *
+	 * - A login session is successfully started with credentials and no guard is required (e.g. Steam Guard is disabled)*
+	 * - A login session is successfully started with credentials and you supplied a valid code to {@link StartLoginSessionWithCredentialsDetails.steamGuardCode}*
+	 * - A login session is successfully started with credentials, you're using email Steam Guard, and you supplied a valid {@link StartLoginSessionWithCredentialsDetails.steamGuardMachineToken}*
+	 * - A login session is successfully started with credentials, then you supplied a valid code to {@link submitSteamGuardCode}*
+	 * - A login session is successfully started, and {@link EAuthSessionGuardType.DeviceConfirmation} or {@link EAuthSessionGuardType.EmailConfirmation} are among the valid guards
+	 * 	 - This case covers {@link startWithQR | QR logins}, since a QR login is a device confirmation under the hood
+	 *
+	 * \* = in these cases, we expect to only have to poll once before login succeeds.
+	 *
+	 * After this event is emitted, if your {@link loginTimeout} elapses and the login attempt has not yet succeeded,
+	 * {@link timeout} is emitted and the login attempt is abandoned. You would then need to start a new login attempt
+	 * using a fresh {@link LoginSession} object.
+	 *
+	 * @event
+	 */
+	static polling = 'polling';
+
+	/**
+	 * This event is emitted when the time specified by {@link loginTimeout} elapses after {@link polling} begins, and
+	 * the login attempt has not yet succeeded. When `timeout` is emitted, {@link cancelLoginAttempt} is called internally.
+	 *
+	 * @event
+	 */
+	static timeout = 'timeout';
+
+	/**
+	 * This event is emitted when Steam reports a "remote interaction" via {@link polling}. This is observed to happen
+	 * when the approval prompt is viewed in the Steam mobile app for the {@link EAuthSessionGuardType.DeviceConfirmation}
+	 * guard. For a {@link startWithQR | QR login}, this would be after you scan the code, but before you tap approve or deny.
+	 *
+	 * @event
+	 */
+	static remoteInteraction = 'remoteInteraction';
+
+	/**
+	 * This event is emitted when Steam sends us a new Steam Guard machine token. Machine tokens are only relevant when logging
+	 * into an account that has email-based Steam Guard enabled. Thus, this will only be emitted after successfully logging into
+	 * such an account.
+	 *
+	 * At this time, this event is only emitted when logging in using {@link EAuthTokenPlatformType.SteamClient | EAuthTokenPlatformType.SteamClient}.
+	 * It's not presently possible to get a machine token for the {@link EAuthTokenPlatformType.WebBrowser} platform
+	 * (and {@link EAuthTokenPlatformType.MobileApp} platform doesn't support machine tokens at all).
+	 *
+	 * When this event is emitted, the {@link LoginSession#steamGuardMachineToken} property contains your new machine token.
+	 *
+	 * @event
+	 */
+	static steamGuardMachineToken = 'steamGuardMachineToken';
+
+	/**
+	 * This event is emitted when we successfully authenticate with Steam. At this point, {@link accountName},
+	 * {@link accessToken}, and {@link refreshToken} are populated. If the {@link EAuthTokenPlatformType}
+	 * passed to the {@link constructor} is appropriate, you can now safely call {@link getWebCookies}.
+	 *
+	 * @event
+	 */
+	static authenticated = 'authenticated';
+
+	/**
+	 * This event is emitted if we encounter an error while {@link polling}. The first argument to the event handler is
+	 * an Error object. If this happens, the login attempt has failed and will need to be retried.
+	 *
+	 * Node.js will crash if this event is emitted and not handled.
+	 *
+	 * ```js
+	 * session.on('error', (err) => {
+	 *     console.error(`An error occurred: ${err.message}`);
+	 * });
+	 * ```
+	 *
+	 * @event
+	 */
+	static error = 'error';
 }
 
 /**
