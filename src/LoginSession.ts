@@ -1,5 +1,5 @@
 import StdLib from '@doctormckay/stdlib';
-import {HttpClient} from '@doctormckay/stdlib/http';
+import {HttpClient, HttpResponse} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import HTTPS from 'https';
@@ -778,11 +778,17 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			let body = {steamID: this.steamID.getSteamID64(), ...params};
 			debug('POST %s %o', url, body);
 
-			let result = await this._webClient.request({
-				method: 'POST',
-				url,
-				multipartForm: HttpClient.simpleObjectToMultipartForm(body)
-			});
+			let result: HttpResponse;
+			try {
+				result = await this._webClient.request({
+					method: 'POST',
+					url,
+					multipartForm: HttpClient.simpleObjectToMultipartForm(body)
+				});
+			} catch (error) {
+				return reject(error);
+			}
+
 			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
 				return reject(new Error('No Set-Cookie header in result'));
 			}
