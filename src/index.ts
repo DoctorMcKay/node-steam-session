@@ -1,3 +1,7 @@
+/**
+ * @module steam-session
+ */
+
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';

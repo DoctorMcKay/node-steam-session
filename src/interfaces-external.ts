@@ -1,3 +1,11 @@
+/**
+ * Definitions in this category are only used as input or output from other methods in steam-session.
+ * You shouldn't really need to check these docs directly; you'll get linked to relevant pages in this section within
+ * the main steam-session section.
+ *
+ * @module method-params
+ */
+
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';

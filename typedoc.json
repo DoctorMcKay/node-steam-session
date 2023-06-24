@@ -1,0 +1,8 @@
+{
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": ["./src/index.ts", "./src/interfaces-external.ts"],
+	"out": "docs",
+	"cacheBust": true,
+	"name": "Steam Session Manager",
+	"sort": ["enum-member-source-order"]
+}

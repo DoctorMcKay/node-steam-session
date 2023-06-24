@@ -31,8 +31,7 @@
 		"lint": "npx eslint . --ext .js,.jsx,.ts,.tsx",
 		"test": "jest",
 		"generate-enums": "node scripts/generate-enums.js",
-		"generate-protos": "node scripts/generate-protos.js",
-		"build-doc": "typedoc --cacheBust --out docs src/index.ts src/interfaces-external.ts"
+		"generate-protos": "node scripts/generate-protos.js"
 	},
 	"dependencies": {
 		"@doctormckay/stdlib": "^2.4.1",

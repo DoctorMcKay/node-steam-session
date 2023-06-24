@@ -1,5 +1,8 @@
 import EResult from '../enums-steam/EResult';
 
+/**
+ * @hidden
+ */
 export interface ApiRequest {
     apiInterface: string;
     apiMethod: string;
@@ -9,12 +12,18 @@ export interface ApiRequest {
     headers?: any;
 }
 
+/**
+ * @hidden
+ */
 export interface ApiResponse {
     result?: EResult;
     errorMessage?: string;
     responseData?: any;
 }
 
+/**
+ * @hidden
+ */
 export default interface ITransport {
     /**
      * Sends a request to Steam.
