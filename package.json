@@ -36,9 +36,9 @@
 	"dependencies": {
 		"@doctormckay/stdlib": "^2.4.1",
 		"debug": "^4.3.4",
+		"kvparser": "^1.0.1",
 		"node-bignumber": "^1.2.2",
 		"protobufjs": "^7.1.0",
-		"simple-vdf": "^1.1.1",
 		"socks-proxy-agent": "^7.0.0",
 		"steamid": "^2.0.0",
 		"tiny-typed-emitter": "^2.1.0",

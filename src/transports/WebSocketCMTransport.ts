@@ -2,8 +2,8 @@ import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import {Agent} from 'https';
 import {HttpClient} from '@doctormckay/stdlib/http';
-import VDF from 'simple-vdf';
-import {WebSocket, FrameType as WsFrameType, State as WsState} from 'websocket13';
+import VDF from 'kvparser';
+import {FrameType as WsFrameType, State as WsState, WebSocket} from 'websocket13';
 import Zlib from 'zlib';
 
 import EMsg from '../enums-steam/EMsg';
