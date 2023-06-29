@@ -747,6 +747,18 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			throw new Error('A refresh token is required to get web cookies');
 		}
 
+		// If our platform type is MobileApp, then our access token *is* our session cookie.
+		// The same is likely true for WebBrowser, but we want to mimic official behavior as closely as possible to avoid
+		// any potential future breakage.
+		if (this._platformType == EAuthTokenPlatformType.MobileApp) {
+			if (!this.accessToken) {
+				await this.refreshAccessToken();
+			}
+
+			let cookieValue = encodeURIComponent([this.steamID.getSteamID64(), this.accessToken].join('||'));
+			return [`steamLoginSecure=${cookieValue}`];
+		}
+
 		let body = {
 			nonce: this.refreshToken,
 			sessionid: randomBytes(12).toString('hex'),
