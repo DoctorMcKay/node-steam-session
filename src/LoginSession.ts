@@ -846,7 +846,29 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			throw new Error('A refresh token is required to get a new access token');
 		}
 
-		this.accessToken = await this._handler.generateAccessTokenForApp(this.refreshToken);
+		this.accessToken = (await this._handler.generateAccessTokenForApp(this.refreshToken)).accessToken;
+	}
+
+	/**
+	 * @return boolean
+	 *
+	 * Attempts to renew your refresh token. In doing so, this also refreshes your access token, the same way that
+	 * {@link refreshAccessToken} does.
+	 *
+	 * Whether a new refresh token will actually be issued is at the discretion of the Steam backend. This method will
+	 * return true if a new refresh token was issued (which can be accessed using the {@link refreshToken} property), or
+	 * false if no new refresh token was issued.
+	 */
+	async renewRefreshToken(): Promise<boolean> {
+		if (!this.refreshToken) {
+			throw new Error('A refresh token is required to get a new access token');
+		}
+
+		let {accessToken, refreshToken} = await this._handler.generateAccessTokenForApp(this.refreshToken, true);
+		this.accessToken = accessToken;
+		this.refreshToken = refreshToken || this.refreshToken;
+
+		return !!refreshToken;
 	}
 
 	////////////////////////////

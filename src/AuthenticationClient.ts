@@ -5,6 +5,7 @@ import {HttpClient} from '@doctormckay/stdlib/http';
 
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EResult from './enums-steam/EResult';
+import ETokenRenewalType from './enums-steam/ETokenRenewalType';
 
 import {getProtoForMethod} from './protobufs';
 import ITransport, {ApiResponse} from './transports/ITransport';
@@ -258,10 +259,11 @@ export default class AuthenticationClient extends EventEmitter {
 		});
 	}
 
-	async generateAccessTokenForApp(refreshToken: string): Promise<string> {
+	async generateAccessTokenForApp(refreshToken: string, renewRefreshToken = false): Promise<{accessToken: string, refreshToken?: string}> {
 		let data:CAuthentication_AccessToken_GenerateForApp_Request = {
 			refresh_token: refreshToken,
-			steamid: decodeJwt(refreshToken).sub
+			steamid: decodeJwt(refreshToken).sub,
+			renewal_type: renewRefreshToken ? ETokenRenewalType.Allow : ETokenRenewalType.None
 		};
 
 		let result:CAuthentication_AccessToken_GenerateForApp_Response = await this.sendRequest({
@@ -274,7 +276,10 @@ export default class AuthenticationClient extends EventEmitter {
 		// We're done with the transport
 		this._transport.close();
 
-		return result.access_token;
+		return {
+			accessToken: result.access_token,
+			refreshToken: result.refresh_token || null
+		};
 	}
 
 	async sendRequest(request: RequestDefinition): Promise<any> {
