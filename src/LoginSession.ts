@@ -858,6 +858,9 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	 * Whether a new refresh token will actually be issued is at the discretion of the Steam backend. This method will
 	 * return true if a new refresh token was issued (which can be accessed using the {@link refreshToken} property), or
 	 * false if no new refresh token was issued.
+	 *
+	 * **Important:** If a refresh token is successfully renewed (e.g. this method returns true), the old refresh token
+	 * will become invalid, even if it is not yet expired.
 	 */
 	async renewRefreshToken(): Promise<boolean> {
 		if (!this.refreshToken) {
