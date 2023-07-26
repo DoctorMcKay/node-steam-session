@@ -815,7 +815,9 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		}));
 
 		let cookies = await promiseAny(transfers) as string[];
-		if (!cookies.some((c) => c.includes('sessionid'))) cookies.push(`sessionid=${sessionId}`);
+		if (!cookies.some((c) => c.includes('sessionid'))) {
+			cookies.push(`sessionid=${sessionId}`);
+		}
 
 		return cookies;
 	}
