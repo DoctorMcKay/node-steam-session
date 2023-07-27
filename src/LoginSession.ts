@@ -286,7 +286,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		}
 
 		if (tokenPlatformType !== this._platformType) {
-			throw new Error('Token platform is different from the platform type of this LoginSession instance');
+			throw new Error('Token platform type is different from the platform type of this LoginSession instance');
 		}
 
 		if (
