@@ -39,6 +39,7 @@ Node.js v12.22.0 or later is required to use this module.
         - [cancelLoginAttempt()](#cancelloginattempt)
         - [getWebCookies()](#getwebcookies)
         - [refreshAccessToken()](#refreshaccesstoken)
+        - [renewRefreshToken()](#renewrefreshtoken)
     - [Events](#events)
 		- [polling](#polling)
         - [timeout](#timeout)
