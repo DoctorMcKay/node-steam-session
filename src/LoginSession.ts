@@ -747,6 +747,8 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			throw new Error('A refresh token is required to get web cookies');
 		}
 
+		let sessionId = randomBytes(12).toString('hex');
+
 		// If our platform type is MobileApp or SteamClient, then our access token *is* our session cookie.
 		// The same is likely true for WebBrowser, but we want to mimic official behavior as closely as possible to avoid
 		// any potential future breakage.
@@ -756,12 +758,12 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			}
 
 			let cookieValue = encodeURIComponent([this.steamID.getSteamID64(), this.accessToken].join('||'));
-			return [`steamLoginSecure=${cookieValue}`];
+			return [`steamLoginSecure=${cookieValue}`, `sessionid=${sessionId}`];
 		}
 
 		let body = {
 			nonce: this.refreshToken,
-			sessionid: randomBytes(12).toString('hex'),
+			sessionid: sessionId,
 			redir: 'https://steamcommunity.com/login/home/?goto='
 		};
 
@@ -812,7 +814,12 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
 		}));
 
-		return await promiseAny(transfers);
+		let cookies = await promiseAny(transfers) as string[];
+		if (!cookies.some((c) => c.includes('sessionid'))) {
+			cookies.push(`sessionid=${sessionId}`);
+		}
+
+		return cookies;
 	}
 
 	/**
