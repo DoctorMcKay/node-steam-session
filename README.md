@@ -38,6 +38,7 @@ Node.js v12.22.0 or later is required to use this module.
         - [forcePoll()](#forcepoll)
         - [cancelLoginAttempt()](#cancelloginattempt)
         - [getWebCookies()](#getwebcookies)
+        - [refreshAccessToken()](#refreshaccesstoken)
     - [Events](#events)
 		- [polling](#polling)
         - [timeout](#timeout)
@@ -423,6 +424,21 @@ await session.refreshAccessToken();
 
 console.log(`New access token: ${session.accessToken}`);
 ```
+
+As of 2023-04-24, this method works for EAuthTokenPlatformType MobileApp and SteamClient, but using WebBrowser will fail
+with response `AccessDenied`.
+
+### renewRefreshToken()
+
+Does the same thing as [`refreshAccessToken()`](#refreshaccesstoken), while also attempting to renew your refresh token.
+
+Whether a new refresh token will actually be issued is at the discretion of the Steam backend. This method will
+return true if a new refresh token was issued (which can be accessed using the [`refreshToken`](#refreshtoken) property), or
+false if no new refresh token was issued. Regardless of the return value, the [`accessToken`](#accesstoken) property is
+always updated with a fresh access token (unless there was an error).
+
+**Important:** If a refresh token is successfully renewed (e.g. this method returns true), the old refresh token will
+become invalid, even if it is not yet expired.
 
 As of 2023-04-24, this method works for EAuthTokenPlatformType MobileApp and SteamClient, but using WebBrowser will fail
 with response `AccessDenied`.

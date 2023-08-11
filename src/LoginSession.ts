@@ -878,12 +878,12 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	/**
 	 * @return boolean
 	 *
-	 * Attempts to renew your refresh token. In doing so, this also refreshes your access token, the same way that
-	 * {@link refreshAccessToken} does.
+	 * Does the same thing as {@link refreshAccessToken}, while also attempting to renew your refresh token.
 	 *
 	 * Whether a new refresh token will actually be issued is at the discretion of the Steam backend. This method will
 	 * return true if a new refresh token was issued (which can be accessed using the {@link refreshToken} property), or
-	 * false if no new refresh token was issued.
+	 * false if no new refresh token was issued. Regardless of the return value, the {@link accessToken} property is
+	 * always updated with a fresh access token (unless there was an error).
 	 *
 	 * **Important:** If a refresh token is successfully renewed (e.g. this method returns true), the old refresh token
 	 * will become invalid, even if it is not yet expired.
