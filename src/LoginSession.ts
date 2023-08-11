@@ -274,19 +274,23 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			throw new Error('The provided token is an access token, not a refresh token');
 		}
 
-		let tokenPlatformType: EAuthTokenPlatformType;
-		if (aud.includes('client')) {
-			tokenPlatformType = EAuthTokenPlatformType.SteamClient;
-		} else if (aud.includes('mobile')) {
-			tokenPlatformType = EAuthTokenPlatformType.MobileApp;
-		} else if (aud.includes('web')) {
-			tokenPlatformType = EAuthTokenPlatformType.WebBrowser;
-		} else {
-			throw new Error('Platform type of token is unknown');
+		let requiredAudience = 'unknown';
+		switch (this._platformType) {
+			case EAuthTokenPlatformType.SteamClient:
+				requiredAudience = 'client';
+				break;
+
+			case EAuthTokenPlatformType.MobileApp:
+				requiredAudience = 'mobile';
+				break;
+
+			case EAuthTokenPlatformType.WebBrowser:
+				requiredAudience = 'web';
+				break;
 		}
 
-		if (tokenPlatformType !== this._platformType) {
-			throw new Error('Token platform type is different from the platform type of this LoginSession instance');
+		if (!aud.includes(requiredAudience)) {
+			throw new Error(`Token platform type is different from the platform type of this LoginSession instance (required audience "${requiredAudience}" but got "${aud.join(',')}"`);
 		}
 
 		if (
