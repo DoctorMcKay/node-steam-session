@@ -1,5 +1,5 @@
 import StdLib from '@doctormckay/stdlib';
-import {Cookie, CookieJar, HttpClient} from '@doctormckay/stdlib/http';
+import {Cookie, CookieJar, HttpClient,getProxyAgent} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import EventEmitter from 'events';
@@ -71,7 +71,7 @@ export default class LoginSession extends EventEmitter {
     }
 
     if (options.httpProxy) {
-      agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy) as HTTPS.Agent;
+      agent = getProxyAgent(true, options.httpProxy) as HTTPS.Agent;
     } else if (options.socksProxy) {
       agent = new SocksProxyAgent(options.socksProxy);
     }
