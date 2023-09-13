@@ -238,7 +238,7 @@ describe('LoginSession tests', () => {
 		});
 
 		expect(session.accountName).toMatch(LOGIN_USERNAME);
-		expect(session.accessToken).toMatch(TOKEN_SET.accessToken);
+		expect(session.accessToken).toBeNull();
 		expect(session.refreshToken).toMatch(TOKEN_SET.refreshToken);
 		expect(session.steamGuardMachineToken).toMatch(TOKEN_SET.guardData);
 	});

@@ -67,7 +67,8 @@ export function createTokenPair(steamId: string, aud: string[]): TokenSet {
 	};
 
 	return {
-		accessToken: encodeJwt(accessTokenData),
+		// As of 2023-09-12, Steam doesn't actually generate access tokens when you login anymore. It's just an empty string.
+		accessToken: '',
 		refreshToken: encodeJwt(refreshTokenData),
 		guardData: encodeJwt(guardData)
 	};
