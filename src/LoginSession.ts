@@ -612,10 +612,15 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			this.emit('steamGuardMachineToken');
 		}
 
-		if (pollResponse.accessToken) {
+		if (pollResponse.refreshToken) {
 			this._accountName = pollResponse.accountName;
-			this.accessToken = pollResponse.accessToken;
 			this.refreshToken = pollResponse.refreshToken;
+			this.accessToken = pollResponse.accessToken || null;
+
+			// On 2023-09-12, Steam stopped issuing access tokens alongside refresh tokens for newly authenticated sessions.
+			// This won't affect any consumer apps that use `getWebCookies()`, since that will acquire an access token if
+			// needed.
+
 			this.emit('authenticated');
 			this.cancelLoginAttempt();
 		} else if (!this._pollingCanceled) {
