@@ -47,7 +47,7 @@ export function createTokenPair(steamId: string, aud: string[]): TokenSet {
 		ip_confirmer: myIp
 	};
 
-	let accessTokenData = {
+	/*let accessTokenData = {
 		...refreshTokenData,
 		iss: `r:${refreshTokenData.jti}`,
 		aud,
@@ -55,7 +55,7 @@ export function createTokenPair(steamId: string, aud: string[]): TokenSet {
 		exp: now + (60 * 60 * 24),
 		rt_exp: refreshTokenData.exp,
 		per: 0
-	};
+	};*/
 
 	let guardData = {
 		...refreshTokenData,
