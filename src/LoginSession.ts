@@ -183,7 +183,13 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	get accountName(): string { return this._accountName; }
 
 	/**
-	 * A `string` containing your access token. This is populated just before the {@link authenticated} event is fired.
+	 * A `string` containing your access token. As of 2023-09-12, Steam does not return an access token in response to
+	 * successful authentication, so this won't be set when the {@link authenticated} event is fired. This will be set
+	 * after you call {@link refreshAccessToken} or {@link renewRefreshToken}. Also, since {@link getWebCookies} calls
+	 * {@link refreshAccessToken} internally for {@link EAuthTokenPlatformType.SteamClient | EAuthTokenPlatformType.SteamClient}
+	 * or {@link EAuthTokenPlatformType.MobileApp | MobileApp}, this will also be set after calling {@link getWebCookies}
+	 * for those platform types.
+	 *
 	 * You can also assign an access token to this property if you already have one, although at present that wouldn't
 	 * do anything useful.
 	 *
@@ -963,8 +969,8 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	static steamGuardMachineToken = 'steamGuardMachineToken';
 
 	/**
-	 * This event is emitted when we successfully authenticate with Steam. At this point, {@link accountName},
-	 * {@link accessToken}, and {@link refreshToken} are populated. If the {@link EAuthTokenPlatformType}
+	 * This event is emitted when we successfully authenticate with Steam. At this point, {@link accountName}
+	 * and {@link refreshToken} are populated. If the {@link EAuthTokenPlatformType}
 	 * passed to the {@link constructor} is appropriate, you can now safely call {@link getWebCookies}.
 	 *
 	 * @event
