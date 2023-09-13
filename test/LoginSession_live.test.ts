@@ -34,7 +34,8 @@ liveTestDescribe('LoginSession live tests', () => {
 					await session.submitSteamGuardCode(getAuthCode(account.sharedSecret, -35));
 
 					session.on('authenticated', async () => {
-						expect(typeof session.accessToken).toBe('string');
+						// 2023-09-12: no access token is present in this response anymore
+						//expect(typeof session.accessToken).toBe('string');
 						expect(typeof session.refreshToken).toBe('string');
 
 						let decodedRefreshToken = decodeJwt(session.refreshToken);
@@ -45,15 +46,23 @@ liveTestDescribe('LoginSession live tests', () => {
 						expect(decodedRefreshToken.sub).toBe(account.steamId);
 						expect(decodedRefreshToken.iss).toBe('steam');
 
+						//let decodedAccessToken = decodeJwt(session.accessToken);
+						//expect(decodedAccessToken.aud).toContain('client');
+						//expect(decodedAccessToken.aud).toContain('web');
+						//expect(decodedAccessToken.sub).toBe(account.steamId);
+						//expect(decodedAccessToken.iss).toBe(`r:${decodedRefreshToken.jti}`);
+
+						let cookies = await session.getWebCookies();
+						expect(Array.isArray(cookies)).toBe(true);
+						expect(cookies.length).toBeGreaterThan(0);
+
+						// We now expect to have an access token.
+						expect(typeof session.accessToken).toBe('string');
 						let decodedAccessToken = decodeJwt(session.accessToken);
 						expect(decodedAccessToken.aud).toContain('client');
 						expect(decodedAccessToken.aud).toContain('web');
 						expect(decodedAccessToken.sub).toBe(account.steamId);
 						expect(decodedAccessToken.iss).toBe(`r:${decodedRefreshToken.jti}`);
-
-						let cookies = await session.getWebCookies();
-						expect(Array.isArray(cookies)).toBe(true);
-						expect(cookies.length).toBeGreaterThan(0);
 
 						resolve(null);
 					});
@@ -80,7 +89,7 @@ liveTestDescribe('LoginSession live tests', () => {
 					await session.submitSteamGuardCode(getAuthCode(account.sharedSecret, 0));
 
 					session.on('authenticated', async () => {
-						expect(typeof session.accessToken).toBe('string');
+						//expect(typeof session.accessToken).toBe('string');
 						expect(typeof session.refreshToken).toBe('string');
 
 						let decodedRefreshToken = decodeJwt(session.refreshToken);
@@ -90,10 +99,10 @@ liveTestDescribe('LoginSession live tests', () => {
 						expect(decodedRefreshToken.sub).toBe(account.steamId);
 						expect(decodedRefreshToken.iss).toBe('steam');
 
-						let decodedAccessToken = decodeJwt(session.accessToken);
-						expect(decodedAccessToken.aud).toContain('web');
-						expect(decodedAccessToken.sub).toBe(account.steamId);
-						expect(decodedAccessToken.iss).toBe(`r:${decodedRefreshToken.jti}`);
+						//let decodedAccessToken = decodeJwt(session.accessToken);
+						//expect(decodedAccessToken.aud).toContain('web');
+						//expect(decodedAccessToken.sub).toBe(account.steamId);
+						//expect(decodedAccessToken.iss).toBe(`r:${decodedRefreshToken.jti}`);
 
 						let cookies = await session.getWebCookies();
 						expect(Array.isArray(cookies)).toBe(true);
@@ -126,7 +135,7 @@ liveTestDescribe('LoginSession live tests', () => {
 					await session.submitSteamGuardCode(getAuthCode(account.sharedSecret, 35));
 
 					session.on('authenticated', async () => {
-						expect(typeof session.accessToken).toBe('string');
+						//expect(typeof session.accessToken).toBe('string');
 						expect(typeof session.refreshToken).toBe('string');
 
 						let decodedRefreshToken = decodeJwt(session.refreshToken);
@@ -137,15 +146,22 @@ liveTestDescribe('LoginSession live tests', () => {
 						expect(decodedRefreshToken.sub).toBe(account.steamId);
 						expect(decodedRefreshToken.iss).toBe('steam');
 
+						//let decodedAccessToken = decodeJwt(session.accessToken);
+						//expect(decodedAccessToken.aud).toContain('web');
+						//expect(decodedAccessToken.aud).toContain('mobile');
+						//expect(decodedAccessToken.sub).toBe(account.steamId);
+						//expect(decodedAccessToken.iss).toBe(`r:${decodedRefreshToken.jti}`);
+
+						let cookies = await session.getWebCookies();
+						expect(Array.isArray(cookies)).toBe(true);
+						expect(cookies.length).toBeGreaterThan(0);
+
+						expect(typeof session.accessToken).toBe('string');
 						let decodedAccessToken = decodeJwt(session.accessToken);
 						expect(decodedAccessToken.aud).toContain('web');
 						expect(decodedAccessToken.aud).toContain('mobile');
 						expect(decodedAccessToken.sub).toBe(account.steamId);
 						expect(decodedAccessToken.iss).toBe(`r:${decodedRefreshToken.jti}`);
-
-						let cookies = await session.getWebCookies();
-						expect(Array.isArray(cookies)).toBe(true);
-						expect(cookies.length).toBeGreaterThan(0);
 
 						resolve(null);
 					});
