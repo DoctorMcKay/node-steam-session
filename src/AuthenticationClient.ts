@@ -40,6 +40,7 @@ import {
 	StartAuthSessionWithQrResponse,
 	SubmitSteamGuardCodeRequest
 } from './interfaces-internal';
+import {clearTimeout} from 'timers';
 
 const debug = createDebug('steam-session:AuthenticationClient');
 
@@ -55,6 +56,7 @@ export default class AuthenticationClient extends EventEmitter {
 	_transport: ITransport;
 	_platformType: EAuthTokenPlatformType;
 	_webClient: HttpClient;
+	_transportCloseTimeout: NodeJS.Timeout;
 
 	constructor(platformType: EAuthTokenPlatformType, transport: ITransport, webClient: HttpClient) {
 		super();
@@ -274,7 +276,7 @@ export default class AuthenticationClient extends EventEmitter {
 		});
 
 		// We're done with the transport
-		this._transport.close();
+		this.close();
 
 		return {
 			accessToken: result.access_token,
@@ -283,6 +285,9 @@ export default class AuthenticationClient extends EventEmitter {
 	}
 
 	async sendRequest(request: RequestDefinition): Promise<any> {
+		// If a transport close is pending, cancel it
+		clearTimeout(this._transportCloseTimeout);
+
 		// Right now we really only support IAuthenticationService
 
 		let {request: requestProto, response: responseProto} = getProtoForMethod(request.apiInterface, request.apiMethod);
@@ -313,6 +318,13 @@ export default class AuthenticationClient extends EventEmitter {
 	}
 
 	close(): void {
-		this._transport.close();
+		// We might possibly want to immediately use this transport again after we think we should close it.
+		// For example, to refresh a token after we log on. So instead of closing immediately, delay by 2 seconds
+		// before closing to give us time for this possibility.
+
+		clearTimeout(this._transportCloseTimeout);
+		this._transportCloseTimeout = setTimeout(() => {
+			this._transport.close();
+		}, 2000);
 	}
 }
