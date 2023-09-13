@@ -627,6 +627,14 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			// This won't affect any consumer apps that use `getWebCookies()`, since that will acquire an access token if
 			// needed.
 
+			// Consumers using SteamClient or WebBrowser never had a reason to consume the accessToken property directly,
+			// since that was only useful as a cookie and `getWebCookies()` should be used instead. However, the access
+			// token is also used as a WebAPI key for MobileApp, so we should probably ensure that we have one for that
+			// platform.
+			if (!this.accessToken && this._platformType == EAuthTokenPlatformType.MobileApp) {
+				await this.refreshAccessToken();
+			}
+
 			this.emit('authenticated');
 			this.cancelLoginAttempt();
 		} else if (!this._pollingCanceled) {
