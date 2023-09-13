@@ -199,8 +199,13 @@ event is fired.
 
 ### accessToken
 
-A `string` containing your access token. This is populated just before the [`authenticated`](#authenticated) event is
-fired. You can also assign an access token to this property if you already have one, although at present that wouldn't
+A `string` containing your access token. **As of 2023-09-12, Steam does not return an access token in response to
+successful authentication, so this won't be set when the [`authenticated`](#authenticated) event is fired.** This will be set
+after you call [`refreshAccessToken()`](#refreshaccesstoken) or [`renewRefreshToken()`](#renewrefreshtoken).
+Also, since [`getWebCookies()`](#getwebcookies) calls `refreshAccessToken()` internally for EAuthTokenPlatformType
+SteamClient or MobileApp, this will also be set after calling `getWebCookies()` for those platform types.
+
+You can also assign an access token to this property if you already have one, although at present that wouldn't
 do anything useful.
 
 Setting this property will throw an Error if:
@@ -505,8 +510,8 @@ token.
 
 ### authenticated
 
-This event is emitted when we successfully authenticate with Steam. At this point, [`accountName`](#accountname),
-[`accessToken`](#accesstoken), and [`refreshToken`](#refreshtoken) are populated. If the [EAuthTokenPlatformType](#eauthtokenplatformtype)
+This event is emitted when we successfully authenticate with Steam. At this point, [`accountName`](#accountname)
+and [`refreshToken`](#refreshtoken) are populated. If the [EAuthTokenPlatformType](#eauthtokenplatformtype)
 passed to the [constructor](#constructorplatformtype-transport) is appropriate, you can now safely call [`getWebCookies`](#getwebcookies).
 
 ### error
