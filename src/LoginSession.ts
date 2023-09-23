@@ -626,6 +626,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			// On 2023-09-12, Steam stopped issuing access tokens alongside refresh tokens for newly authenticated sessions.
 			// This won't affect any consumer apps that use `getWebCookies()`, since that will acquire an access token if
 			// needed.
+			// On 2023-09-22, I noticed that Steam started issuing access tokens again. ¯\_(ツ)_/¯
 
 			// Consumers using SteamClient or WebBrowser never had a reason to consume the accessToken property directly,
 			// since that was only useful as a cookie and `getWebCookies()` should be used instead. However, the access
