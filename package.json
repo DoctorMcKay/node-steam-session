@@ -42,7 +42,7 @@
 		"socks-proxy-agent": "^7.0.0",
 		"steamid": "^2.0.0",
 		"tiny-typed-emitter": "^2.1.0",
-		"websocket13": "^3.0.1"
+		"websocket13": "^4.0.0"
 	},
 	"devDependencies": {
 		"@jest/globals": "^28.1.3",
