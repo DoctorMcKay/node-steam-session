@@ -6,6 +6,8 @@
  * @module method-params
  */
 
+import HTTPS from 'https';
+
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
@@ -29,6 +31,11 @@ export interface ConstructorOptions {
 	 * A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
 	 */
 	httpProxy?: string
+
+	/**
+	 * An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
+	 */
+	agent?: HTTPS.Agent
 }
 
 export interface StartLoginSessionWithCredentialsDetails {

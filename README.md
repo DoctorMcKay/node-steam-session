@@ -254,7 +254,9 @@ event is emitted.
 		If omitted, defaults to a `WebSocketCMTransport` instance for `SteamClient` platform types, and a 
 		`WebApiTransport` instance for all other platform types. In all likelihood, you don't need to use this.
     - `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
-    - `socksProxy` A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
+    - `socksProxy` - A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
+    - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created
+      internally.
 
 Constructs a new `LoginSession` instance. Example usage:
 
