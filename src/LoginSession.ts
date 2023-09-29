@@ -104,10 +104,11 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		options = options || {};
 
-		let agent:HTTPS.Agent = new HTTPS.Agent({keepAlive: true});
-		if (options.httpProxy && options.socksProxy) {
-			throw new Error('Cannot specify both httpProxy and socksProxy at the same time');
+		if (options.httpProxy && options.socksProxy || options.agent && (options.httpProxy || options.socksProxy)) {
+			throw new Error('Cannot specify both httpProxy, socksProxy or agent at the same time');
 		}
+
+		let agent:HTTPS.Agent = options.agent || new HTTPS.Agent({keepAlive: true});
 
 		if (options.httpProxy) {
 			agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy) as HTTPS.Agent;
