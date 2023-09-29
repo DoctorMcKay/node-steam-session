@@ -104,8 +104,9 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		options = options || {};
 
-		if (options.httpProxy && options.socksProxy || options.agent && (options.httpProxy || options.socksProxy)) {
-			throw new Error('Cannot specify both httpProxy, socksProxy or agent at the same time');
+		let mutuallyExclusiveOptions = ['httpProxy', 'socksProxy', 'agent'];
+		if (Object.keys(options).filter(k => mutuallyExclusiveOptions.includes(k)).length > 1) {
+			throw new Error('Cannot specify more than one of httpProxy, socksProxy, or agent at the same time');
 		}
 
 		let agent:HTTPS.Agent = options.agent || new HTTPS.Agent({keepAlive: true});

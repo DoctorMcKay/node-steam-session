@@ -255,9 +255,10 @@ event is emitted.
 		`WebApiTransport` instance for all other platform types. In all likelihood, you don't need to use this.
     - `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
     - `socksProxy` - A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
-    - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created
-      internally.
-- You can't use `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more than one of them, an Error will be thrown.
+    - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
+
+You can only use one of `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more than one of them,
+an Error will be thrown.
 
 Constructs a new `LoginSession` instance. Example usage:
 
@@ -570,9 +571,10 @@ If this is a `string`, it must be either hex- or base64-encoded.
 	  If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
 	- `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
 	- `socksProxy` A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
-    - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created
-      internally.
-- You can't use `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more than one of them, an Error will be thrown.
+    - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
+
+You can only use one of `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more than one of them,
+an Error will be thrown.
 
 Constructs a new `LoginApprover` instance. Example usage:
 
