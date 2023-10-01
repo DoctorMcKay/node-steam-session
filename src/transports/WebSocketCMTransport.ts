@@ -12,7 +12,7 @@ import EResult from '../enums-steam/EResult';
 import Protos from '../protobuf-generated/load';
 import {CMsgClientHello, CMsgClientLogonResponse, CMsgMulti, CMsgProtoBufHeader} from '../protobuf-generated/types';
 import ITransport, {ApiRequest, ApiResponse} from './ITransport';
-import {eresultError} from '../helpers';
+import {GlobalCache, eresultError} from '../helpers';
 
 const debug = createDebug('steam-session:WebSocketCMTransport');
 const debugVerbose = debug.extend('verbose');
@@ -91,7 +91,7 @@ export default class WebSocketCMTransport implements ITransport {
 
 				debug('_connectToCM()');
 
-				let cmList = (await this._fetchCMList())
+				let cmList = (await this._getCMList())
 					.filter(cm => cm.type == 'websockets' && cm.realm == 'steamglobal');
 
 				// Choose a CM at random
@@ -157,6 +157,18 @@ export default class WebSocketCMTransport implements ITransport {
 				reject(ex);
 			}
 		});
+	}
+
+	async _getCMList(): Promise<CmServer[]> {
+		let cmList = GlobalCache.get('cmlist');
+		if (cmList) return cmList;
+
+		cmList = await this._fetchCMList();
+
+		GlobalCache.set('cmlist', cmList);
+		setTimeout(() => GlobalCache.delete('cmlist'), 60000).unref();
+
+		return cmList;
 	}
 
 	async _fetchCMList(): Promise<CmServer[]> {
