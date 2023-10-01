@@ -1,6 +1,8 @@
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import {Agent} from 'https';
+import {Semaphore} from '@doctormckay/stdlib/concurrency';
+import {TTLCache} from '@doctormckay/stdlib/data_structures';
 import {HttpClient} from '@doctormckay/stdlib/http';
 import VDF from 'kvparser';
 import {FrameType as WsFrameType, State as WsState, WebSocket} from 'websocket13';
@@ -12,13 +14,16 @@ import EResult from '../enums-steam/EResult';
 import Protos from '../protobuf-generated/load';
 import {CMsgClientHello, CMsgClientLogonResponse, CMsgMulti, CMsgProtoBufHeader} from '../protobuf-generated/types';
 import ITransport, {ApiRequest, ApiResponse} from './ITransport';
-import {GlobalCache, eresultError} from '../helpers';
+import {eresultError} from '../helpers';
 
 const debug = createDebug('steam-session:WebSocketCMTransport');
 const debugVerbose = debug.extend('verbose');
 
 const PROTOCOL_VERSION = 65580;
 const PROTO_MASK = 0x80000000;
+
+let g_CmListRetrievalSemaphore = new Semaphore();
+let g_CmListCache = new TTLCache<CmServer[]>(1000 * 60 * 5); // cache for 5 minutes
 
 interface CmServer {
 	endpoint: string;
@@ -160,15 +165,21 @@ export default class WebSocketCMTransport implements ITransport {
 	}
 
 	async _getCMList(): Promise<CmServer[]> {
-		let cmList = GlobalCache.get('cmlist');
-		if (cmList) return cmList;
+		let release = await g_CmListRetrievalSemaphore.waitAsync();
+		try {
+			let cmList = g_CmListCache.get('cmlist');
+			if (cmList) {
+				debug('Using cached CM list');
+				return cmList;
+			}
 
-		cmList = await this._fetchCMList();
+			cmList = await this._fetchCMList();
+			g_CmListCache.add('cmlist', cmList);
 
-		GlobalCache.set('cmlist', cmList);
-		setTimeout(() => GlobalCache.delete('cmlist'), 60000).unref();
-
-		return cmList;
+			return cmList;
+		} finally {
+			release();
+		}
 	}
 
 	async _fetchCMList(): Promise<CmServer[]> {

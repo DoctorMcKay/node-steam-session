@@ -9,8 +9,6 @@ import EOSType from './enums-steam/EOSType';
 
 const CHROME_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36';
 
-export const GlobalCache = new Map<string, any>();
-
 export function eresultError(result:EResult, errorMessage?:string): Error {
 	let resultMsg:string = result.toString(); // this is the numeric value, as a string
 	resultMsg = EResult[resultMsg] || resultMsg; // this is now the string representation of the EResult value
