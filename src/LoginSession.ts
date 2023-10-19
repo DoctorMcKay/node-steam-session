@@ -104,12 +104,13 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		options = options || {};
 
-		let mutuallyExclusiveOptions = ['httpProxy', 'socksProxy', 'agent'];
+		let mutuallyExclusiveOptions = ['httpProxy', 'socksProxy', 'agent', 'localAddress'];
 		if (Object.keys(options).filter(k => mutuallyExclusiveOptions.includes(k)).length > 1) {
-			throw new Error('Cannot specify more than one of httpProxy, socksProxy, or agent at the same time');
+			throw new Error('Cannot specify more than one of httpProxy, socksProxy, agent, or localAddress at the same time');
 		}
 
 		let agent:HTTPS.Agent = options.agent || new HTTPS.Agent({keepAlive: true});
+		let localAddress = options.localAddress;
 
 		if (options.httpProxy) {
 			agent = StdLib.HTTP.getProxyAgent(true, options.httpProxy) as HTTPS.Agent;
@@ -117,7 +118,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new HttpClient({httpsAgent: agent});
+		this._webClient = new HttpClient({httpsAgent: agent, localAddress: localAddress});
 
 		this._platformType = platformType;
 
