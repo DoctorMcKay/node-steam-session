@@ -250,6 +250,8 @@ event is emitted.
 - `platformType` - A value from [`EAuthTokenPlatformType`](#eauthtokenplatformtype). You should set this to the
 	appropriate platform type for your desired usage.
 - `options` - An object with zero or more of these properties:
+	- `userAgent` - Pass a user-agent string if you want to override the [default user-agent](https://github.com/DoctorMcKay/node-user-agents/blob/master/index.js).
+        This is only effective when using EAuthTokenPlatformType.WebBrowser.
 	- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
 		If omitted, defaults to a `WebSocketCMTransport` instance for `SteamClient` platform types, and a 
 		`WebApiTransport` instance for all other platform types. In all likelihood, you don't need to use this.
