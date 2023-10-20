@@ -8,7 +8,7 @@ import SteamID from 'steamid';
 import {TypedEmitter} from 'tiny-typed-emitter';
 
 import AuthenticationClient from './AuthenticationClient';
-import {API_HEADERS, decodeJwt, eresultError} from './helpers';
+import {API_HEADERS, decodeJwt, eresultError, defaultUserAgent} from './helpers';
 
 import WebApiTransport from './transports/WebApiTransport';
 import WebSocketCMTransport from './transports/WebSocketCMTransport';
@@ -117,7 +117,10 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new HttpClient({httpsAgent: agent, localAddress: options.localAddress});
+		this._webClient = new HttpClient({
+			httpsAgent: agent,
+			localAddress: options.localAddress
+		});
 
 		this._platformType = platformType;
 
@@ -133,7 +136,12 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			}
 		}
 
-		this._handler = new AuthenticationClient(this._platformType, transport, this._webClient);
+		this._handler = new AuthenticationClient({
+			platformType: this._platformType,
+			transport,
+			webClient: this._webClient,
+			webUserAgent: options.userAgent || defaultUserAgent()
+		});
 		this._handler.on('debug', (...args) => this.emit('debug-handler', ...args));
 		this.on('debug', debug);
 
@@ -476,9 +484,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		this._hadRemoteInteraction = false;
 
-		this._startSessionResponse = await this._handler.startSessionWithQR({
-			platformType: this._platformType
-		});
+		this._startSessionResponse = await this._handler.startSessionWithQR();
 
 		this.emit('debug', 'start qr session response', this._startSessionResponse);
 

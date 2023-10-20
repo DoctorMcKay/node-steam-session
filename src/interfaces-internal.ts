@@ -4,11 +4,20 @@ import EAuthSessionGuardType from './enums-steam/EAuthSessionGuardType';
 import EResult from './enums-steam/EResult';
 import EAuthSessionSecurityHistory from './enums-steam/EAuthSessionSecurityHistory';
 import {CAuthentication_DeviceDetails} from './protobuf-generated/types';
+import ITransport from './transports/ITransport';
+import {HttpClient} from '@doctormckay/stdlib/http';
 
 export interface PlatformData {
 	headers: any;
 	websiteId: string;
 	deviceDetails: CAuthentication_DeviceDetails;
+}
+
+export interface AuthenticationClientConstructorOptions {
+	platformType: EAuthTokenPlatformType,
+	transport: ITransport,
+	webClient: HttpClient,
+	webUserAgent: string
 }
 
 export interface StartAuthSessionRequest {

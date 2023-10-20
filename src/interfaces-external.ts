@@ -44,7 +44,13 @@ export interface ConstructorOptions {
 	 * An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
 	 * Cannot be used alongside `localAddress`, `socksProxy`, or `httpProxy`.
 	 */
-	agent?: HTTPS.Agent
+	agent?: HTTPS.Agent,
+
+	/**
+	 * A string containing the user-agent you want to use when communicating with Steam.
+	 * Only effective when using EAuthTokenPlatformType.WebBrowser.
+	 */
+	userAgent?: string
 }
 
 export interface StartLoginSessionWithCredentialsDetails {

@@ -8,7 +8,7 @@ import SteamID from 'steamid';
 import AuthenticationClient from './AuthenticationClient';
 import WebApiTransport from './transports/WebApiTransport';
 import {ApproveAuthSessionRequest, AuthSessionInfo, ConstructorOptions} from './interfaces-external';
-import {decodeJwt} from './helpers';
+import {decodeJwt, defaultUserAgent} from './helpers';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 
@@ -35,11 +35,19 @@ export default class LoginApprover {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new HttpClient({httpsAgent: agent, localAddress: options.localAddress});
+		this._webClient = new HttpClient({
+			httpsAgent: agent,
+			localAddress: options.localAddress
+		});
 
 		this.accessToken = accessToken;
 		this.sharedSecret = sharedSecret;
-		this._handler = new AuthenticationClient(EAuthTokenPlatformType.MobileApp, options.transport || new WebApiTransport(this._webClient), this._webClient);
+		this._handler = new AuthenticationClient({
+			platformType: EAuthTokenPlatformType.MobileApp,
+			transport: options.transport || new WebApiTransport(this._webClient),
+			webClient: this._webClient,
+			webUserAgent: defaultUserAgent()
+		});
 	}
 
 	get steamID(): SteamID {
