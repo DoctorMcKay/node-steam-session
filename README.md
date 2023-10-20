@@ -7,8 +7,8 @@
 
 This module enables you to negotiate Steam tokens by authenticating with the Steam login server. **This is for use with
 your own accounts.** This is not to be used to authenticate other Steam users or to gain access to their accounts. For
-that use-case, please use the [Steam OpenID service](https://steamcommunity.com/dev) and the many available
-[WebAPIs](https://steamapi.xpaw.me/).
+that use-case, please use the [Steam OpenID service](https://steamcommunity.com/dev) (you may want to consider using
+[steam-signin](https://www.npmjs.com/package/steam-signin)) and the many available [WebAPIs](https://steamapi.xpaw.me/).
 
 Node.js v12.22.0 or later is required to use this module.
 
