@@ -22,9 +22,9 @@ export default class LoginApprover {
 	constructor(accessToken: string, sharedSecret: string|Buffer, options?: ConstructorOptions) {
 		options = options || {};
 
-		let mutuallyExclusiveOptions = ['httpProxy', 'socksProxy', 'agent'];
+		let mutuallyExclusiveOptions = ['localAddress', 'httpProxy', 'socksProxy', 'agent'];
 		if (Object.keys(options).filter(k => mutuallyExclusiveOptions.includes(k)).length > 1) {
-			throw new Error('Cannot specify more than one of httpProxy, socksProxy, or agent at the same time');
+			throw new Error('Cannot specify more than one of localAddress, httpProxy, socksProxy, or agent at the same time');
 		}
 
 		let agent:HTTPS.Agent = options.agent || new HTTPS.Agent({keepAlive: true});
@@ -35,7 +35,7 @@ export default class LoginApprover {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new HttpClient({httpsAgent: agent});
+		this._webClient = new HttpClient({httpsAgent: agent, localAddress: options.localAddress});
 
 		this.accessToken = accessToken;
 		this.sharedSecret = sharedSecret;

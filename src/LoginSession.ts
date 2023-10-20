@@ -104,9 +104,9 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		options = options || {};
 
-		let mutuallyExclusiveOptions = ['httpProxy', 'socksProxy', 'agent'];
+		let mutuallyExclusiveOptions = ['localAddress', 'httpProxy', 'socksProxy', 'agent'];
 		if (Object.keys(options).filter(k => mutuallyExclusiveOptions.includes(k)).length > 1) {
-			throw new Error('Cannot specify more than one of httpProxy, socksProxy, or agent at the same time');
+			throw new Error('Cannot specify more than one of localAddress, httpProxy, socksProxy, or agent at the same time');
 		}
 
 		let agent:HTTPS.Agent = options.agent || new HTTPS.Agent({keepAlive: true});
@@ -117,7 +117,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			agent = new SocksProxyAgent(options.socksProxy);
 		}
 
-		this._webClient = new HttpClient({httpsAgent: agent});
+		this._webClient = new HttpClient({httpsAgent: agent, localAddress: options.localAddress});
 
 		this._platformType = platformType;
 
@@ -125,7 +125,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		if (!transport) {
 			switch (platformType) {
 				case EAuthTokenPlatformType.SteamClient:
-					transport = new WebSocketCMTransport(this._webClient, agent);
+					transport = new WebSocketCMTransport(this._webClient, agent, options.localAddress);
 					break;
 
 				default:

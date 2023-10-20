@@ -253,12 +253,15 @@ event is emitted.
 	- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
 		If omitted, defaults to a `WebSocketCMTransport` instance for `SteamClient` platform types, and a 
 		`WebApiTransport` instance for all other platform types. In all likelihood, you don't need to use this.
+	- `localAddress` - A string containing the local IP address you want to use. For example, `11.22.33.44`
     - `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
     - `socksProxy` - A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
     - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
 
-You can only use one of `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more than one of them,
-an Error will be thrown.
+You can only use one of `localAddress`, `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more
+than one of them, an Error will be thrown.
+
+If you specify a custom transport, then you are responsible for handling proxy or agent usage in your transport.
 
 Constructs a new `LoginSession` instance. Example usage:
 
@@ -569,12 +572,15 @@ If this is a `string`, it must be either hex- or base64-encoded.
 - `options` - An object with zero or more of these properties:
 	- `transport` - An `ITransport` instance, if you need to specify a [custom transport](#custom-transports).
 	  If omitted, defaults to a `WebApiTransport` instance. In all likelihood, you don't need to use this.
+    - `localAddress` - A string containing the local IP address you want to use. For example, `11.22.33.44`
 	- `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
 	- `socksProxy` A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
     - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
 
-You can only use one of `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more than one of them,
-an Error will be thrown.
+You can only use one of `localAddress`, `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more
+than one of them, an Error will be thrown.
+
+If you specify a custom transport, then you are responsible for handling proxy or agent usage in your transport.
 
 Constructs a new `LoginApprover` instance. Example usage:
 

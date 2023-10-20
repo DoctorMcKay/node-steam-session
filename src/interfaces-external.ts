@@ -23,17 +23,26 @@ export interface ConstructorOptions {
 	transport?: ITransport,
 
 	/**
-	 * A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
+	 * A string containing the local IP address you want to use. For example, '11.22.33.44'.
+	 * Cannot be used alongside `socksProxy`, `httpProxy`, or `agent`.
+	 */
+	localAddress?: string,
+
+	/**
+	 * A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`.
+	 * Cannot be used alongside `localAddress`, `httpProxy`, or `agent`.
 	 */
 	socksProxy?: string,
 
 	/**
-	 * A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
+	 * A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`.
+	 * Cannot be used alongside `localAddress`, `socksProxy`, or `agent`.
 	 */
-	httpProxy?: string
+	httpProxy?: string,
 
 	/**
 	 * An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
+	 * Cannot be used alongside `localAddress`, `socksProxy`, or `httpProxy`.
 	 */
 	agent?: HTTPS.Agent
 }

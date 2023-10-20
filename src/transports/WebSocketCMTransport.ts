@@ -39,13 +39,15 @@ export default class WebSocketCMTransport implements ITransport {
 	_connectTimeout = 1000;
 	_webClient: HttpClient;
 	_agent: Agent;
+	_localAddress?: string;
 	_websocket: any;
 	_jobs: any;
 	_clientSessionId = 0;
 
-	constructor(webClient: HttpClient, agent: Agent) {
+	constructor(webClient: HttpClient, agent: Agent, localAddress?: string) {
 		this._webClient = webClient;
 		this._agent = agent;
+		this._localAddress = localAddress;
 		this._websocket = null;
 		this._jobs = {};
 	}
@@ -108,7 +110,8 @@ export default class WebSocketCMTransport implements ITransport {
 				let resolved = false;
 				this._websocket = new WebSocket(`wss://${cm.endpoint}/cmsocket/`, {
 					connection: {
-						agent: this._agent
+						agent: this._agent,
+						localAddress: this._localAddress
 					}
 				});
 
