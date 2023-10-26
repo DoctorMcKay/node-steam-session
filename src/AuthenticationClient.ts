@@ -356,7 +356,7 @@ export default class AuthenticationClient extends EventEmitter {
 				};
 
 				return {
-					websiteId: 'Client',
+					websiteId: 'Unknown',
 					// Headers are actually not used since this is sent over a CM connection
 					headers: {
 						'user-agent': 'Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/1665786434; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
@@ -368,7 +368,7 @@ export default class AuthenticationClient extends EventEmitter {
 					deviceDetails: {
 						device_friendly_name: refererQuery.LOCAL_HOSTNAME,
 						platform_type: EAuthTokenPlatformType.SteamClient,
-						os_type: EOSType.Windows10,
+						os_type: EOSType.Win11,
 						// EGamingDeviceType full definition is unknown, but 1 appears to be a desktop PC
 						gaming_device_type: 1
 					}
