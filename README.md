@@ -259,6 +259,10 @@ event is emitted.
     - `httpProxy` - A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`
     - `socksProxy` - A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`
     - `agent` - An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
+    - `machineId` - Only applicable when using EAuthTokenPlatformType.SteamClient. Pass a `Buffer` containing a valid
+        Steam machine ID. Pass `true` to have steam-session internally generate a machine ID using the [same format that
+        steam-user uses](https://github.com/DoctorMcKay/node-steam-user#machineidformat). Pass `false`, `null`, or omit
+        this property to not send a machine ID (not sending a machine ID may cause problems in the future).
 
 You can only use one of `localAddress`, `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more
 than one of them, an Error will be thrown.
