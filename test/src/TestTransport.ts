@@ -47,16 +47,21 @@ function requestsEqual(expected: ApiRequest, actual: ApiRequest, checkHeaders = 
 	}
 
 	let decodedReq = protobufDecodeRequest(actual);
+	deleteUncheckedProps(expected.requestData, decodedReq);
+	return deepEqual(expected.requestData, decodedReq);
+}
 
-	for (let i in expected.requestData) {
-		if (expected.requestData[i] === DONT_CHECK_PROPERTY) {
-			// Don't check the value of this property.
-			delete expected.requestData[i];
-			delete decodedReq[i];
+function deleteUncheckedProps(expected, actual) {
+	for (let i in expected) {
+		if (expected[i] === DONT_CHECK_PROPERTY) {
+			delete expected[i];
+			delete actual[i];
+		}
+
+		if (typeof expected[i] == 'object') {
+			deleteUncheckedProps(expected[i], actual[i]);
 		}
 	}
-
-	return deepEqual(expected.requestData, decodedReq);
 }
 
 function deepEqual(obj1, obj2): boolean {

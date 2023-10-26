@@ -71,9 +71,14 @@ describe('LoginSession tests', () => {
 						account_name: LOGIN_USERNAME,
 						encryption_timestamp: RSAKEY_TIMESTAMP,
 						persistence: ESessionPersistence.Persistent,
-						website_id: 'Client',
+						website_id: 'Unknown'
+					});
+
+					expect(req.device_details).toMatchObject({
 						device_friendly_name: getSpoofedHostname(),
-						platform_type: EAuthTokenPlatformType.SteamClient
+						platform_type: EAuthTokenPlatformType.SteamClient,
+						os_type: 20,
+						gaming_device_type: 1
 					});
 
 					let decryptedPassword = rsaKey.decrypt(b64tohex(encryptedPassword)).toString('utf8');
@@ -190,9 +195,15 @@ describe('LoginSession tests', () => {
 				encrypted_password: DONT_CHECK_PROPERTY,
 				encryption_timestamp: RSAKEY_TIMESTAMP,
 				persistence: ESessionPersistence.Persistent,
-				website_id: 'Client',
-				device_friendly_name: getSpoofedHostname(),
-				platform_type: EAuthTokenPlatformType.SteamClient
+				remember_login: true,
+				website_id: 'Unknown',
+				device_details: {
+					device_friendly_name: getSpoofedHostname(),
+					platform_type: EAuthTokenPlatformType.SteamClient,
+					os_type: 20,
+					gaming_device_type: 1,
+					machine_id: DONT_CHECK_PROPERTY
+				}
 			}
 		})).toBeTruthy();
 
