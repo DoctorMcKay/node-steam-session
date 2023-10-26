@@ -50,7 +50,14 @@ export interface ConstructorOptions {
 	 * A string containing the user-agent you want to use when communicating with Steam.
 	 * Only effective when using EAuthTokenPlatformType.WebBrowser.
 	 */
-	userAgent?: string
+	userAgent?: string,
+
+	/**
+	 * Your Steam machine ID, used for SteamClient logins. Pass a Buffer containing your well-formed machine ID, pass
+	 * `true` to have steam-session internally generate a machine ID using the same formula that steam-user uses by
+	 * default, or pass `false`, `null`, or omit to not send a machine ID.
+	 */
+	machineId?: Buffer|boolean
 }
 
 export interface StartLoginSessionWithCredentialsDetails {

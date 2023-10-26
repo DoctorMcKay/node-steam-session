@@ -67,3 +67,45 @@ export function getSpoofedHostname() {
 export function defaultUserAgent() {
 	return chrome();
 }
+
+export function createMachineId(accountName: string): Buffer {
+	return Buffer.concat([
+		byteToBuffer(0),
+		stringToBuffer('MessageObject'),
+
+		byteToBuffer(1),
+		stringToBuffer('BB3'),
+		stringToBuffer(sha1(`SteamUser Hash BB3 ${accountName}`)),
+
+		byteToBuffer(1),
+		stringToBuffer('FF2'),
+		stringToBuffer(sha1(`SteamUser Hash FF2 ${accountName}`)),
+
+		byteToBuffer(1),
+		stringToBuffer('3B3'),
+		stringToBuffer(sha1(`SteamUser Hash 3B3 ${accountName}`)),
+
+		byteToBuffer(8),
+		byteToBuffer(8)
+	]);
+
+	function sha1(input) {
+		let hash = createHash('sha1');
+		hash.update(input, 'utf8');
+		return hash.digest('hex');
+	}
+
+	function stringToBuffer(input) {
+		let b = Buffer.from(input, 'utf8');
+		return Buffer.concat([
+			b,
+			Buffer.from('00', 'hex')
+		]);
+	}
+
+	function byteToBuffer(input) {
+		let b = Buffer.alloc(1);
+		b[0] = input;
+		return b;
+	}
+}

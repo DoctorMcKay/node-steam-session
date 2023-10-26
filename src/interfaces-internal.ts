@@ -17,7 +17,8 @@ export interface AuthenticationClientConstructorOptions {
 	platformType: EAuthTokenPlatformType,
 	transport: ITransport,
 	webClient: HttpClient,
-	webUserAgent: string
+	webUserAgent: string,
+	machineId?: Buffer|boolean
 }
 
 export interface StartAuthSessionRequest {

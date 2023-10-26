@@ -140,7 +140,8 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			platformType: this._platformType,
 			transport,
 			webClient: this._webClient,
-			webUserAgent: options.userAgent || defaultUserAgent()
+			webUserAgent: options.userAgent || defaultUserAgent(),
+			machineId: options.machineId
 		});
 		this._handler.on('debug', (...args) => this.emit('debug-handler', ...args));
 		this.on('debug', debug);

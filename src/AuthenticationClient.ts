@@ -8,12 +8,20 @@ import {clearTimeout} from 'timers';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 import EOSType from './enums-steam/EOSType';
 import EResult from './enums-steam/EResult';
+import ESessionPersistence from './enums-steam/ESessionPersistence';
 import ETokenRenewalType from './enums-steam/ETokenRenewalType';
 
 import {getProtoForMethod} from './protobufs';
 import ITransport, {ApiResponse} from './transports/ITransport';
 
-import {API_HEADERS, decodeJwt, eresultError, getSpoofedHostname, isJwtValidForAudience} from './helpers';
+import {
+	API_HEADERS,
+	createMachineId,
+	decodeJwt,
+	eresultError,
+	getSpoofedHostname,
+	isJwtValidForAudience
+} from './helpers';
 import {
 	CAuthentication_AccessToken_GenerateForApp_Request,
 	CAuthentication_AccessToken_GenerateForApp_Response,
@@ -61,6 +69,7 @@ export default class AuthenticationClient extends EventEmitter {
 	_webClient: HttpClient;
 	_transportCloseTimeout: NodeJS.Timeout;
 	_webUserAgent: string;
+	_machineId?: Buffer|boolean;
 
 	constructor(options: AuthenticationClientConstructorOptions) {
 		super();
@@ -72,6 +81,8 @@ export default class AuthenticationClient extends EventEmitter {
 		if (this._platformType == EAuthTokenPlatformType.WebBrowser) {
 			this._webClient.userAgent = options.webUserAgent;
 		}
+
+		this._machineId = options.machineId;
 	}
 
 	async getRsaKey(accountName: string): Promise<CAuthentication_GetPasswordRSAPublicKey_Response> {
@@ -102,17 +113,19 @@ export default class AuthenticationClient extends EventEmitter {
 			account_name: details.accountName,
 			encrypted_password: details.encryptedPassword,
 			encryption_timestamp: details.keyTimestamp,
+			remember_login: details.persistence == ESessionPersistence.Persistent,
 			persistence: details.persistence,
 			website_id: websiteId,
 			device_details: deviceDetails
 		};
 
 		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
-			// At least for SteamClient logins, we don't supply device_details.
-			// TODO: check if this is true for other platform types
-			data.device_friendly_name = deviceDetails.device_friendly_name;
-			data.platform_type = deviceDetails.platform_type;
-			delete data.device_details;
+			// For SteamClient logins, we also need a machine id
+			if (this._machineId && Buffer.isBuffer(this._machineId)) {
+				data.device_details.machine_id = this._machineId;
+			} else if (this._machineId === true) {
+				data.device_details.machine_id = createMachineId(details.accountName);
+			}
 		}
 
 		if (details.steamGuardMachineToken) {
