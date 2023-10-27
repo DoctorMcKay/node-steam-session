@@ -85,6 +85,8 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	private _pollTimer?: Timeout;
 	private _pollingCanceled?: boolean;
 
+	private _accessTokenSetAt?: Date;
+
 	/**
 	 * @param {EAuthTokenPlatformType} platformType - A value from {@link EAuthTokenPlatformType}.
 	 * You should set this to the appropriate platform type for your desired usage.
@@ -260,6 +262,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		// Everything checks out
 		this._accessToken = token;
+		this._accessTokenSetAt = new Date();
 	}
 
 	/**
@@ -801,7 +804,8 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		// The same is likely true for WebBrowser, but we want to mimic official behavior as closely as possible to avoid
 		// any potential future breakage.
 		if ([EAuthTokenPlatformType.SteamClient, EAuthTokenPlatformType.MobileApp].includes(this._platformType)) {
-			if (!this.accessToken) {
+			if (!this.accessToken || Date.now() - this._accessTokenSetAt.getTime() > (1000 * 60 * 10)) {
+				// Refresh our access token if we either don't have one, or the token we have is greater than 10 minutes old
 				await this.refreshAccessToken();
 			}
 
