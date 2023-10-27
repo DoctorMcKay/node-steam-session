@@ -805,7 +805,9 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		// any potential future breakage.
 		if ([EAuthTokenPlatformType.SteamClient, EAuthTokenPlatformType.MobileApp].includes(this._platformType)) {
 			if (!this.accessToken || Date.now() - this._accessTokenSetAt.getTime() > (1000 * 60 * 10)) {
-				// Refresh our access token if we either don't have one, or the token we have is greater than 10 minutes old
+				// Refresh our access token if we either don't have one, or the token we have is greater than 10 minutes old.
+				// Technically we could just decode the JWT and find out when it expires (or was issued), but let's try
+				// to minimize how much we depend on the access token being a JWT (as Valve may change it at any point).
 				await this.refreshAccessToken();
 			}
 
