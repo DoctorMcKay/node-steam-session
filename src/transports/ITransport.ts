@@ -1,6 +1,3 @@
-// eslint-disable-next-line no-unused-vars
-import type {ConstructorOptions} from '../interfaces-external';
-
 import EResult from '../enums-steam/EResult';
 
 /**
@@ -32,7 +29,10 @@ export interface ApiResponse {
  * the same channel as the rest of its network communication. Unless this matches your use-case, I cannot think of any
  * reason why you'd need to implement your own custom transport unless you for some reason need to tunnel requests over
  * an entirely different network protocol. If you simply need to proxy requests, you should instead use
- * {@link ConstructorOptions.httpProxy} or {@link ConstructorOptions.socksProxy}.
+ * {@link ConstructorOptions.httpProxy}, {@link ConstructorOptions.socksProxy}, or {@link ConstructorOptions.agent}.
+ *
+ * If you do need to implement ITransport, it will be helpful to review
+ * [ITransport.ts](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/transports/ITransport.ts).
  */
 export default interface ITransport {
     /**

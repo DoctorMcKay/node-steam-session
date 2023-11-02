@@ -24,31 +24,35 @@ export interface ConstructorOptions {
 
 	/**
 	 * A string containing the local IP address you want to use. For example, `11.22.33.44`.
-	 * Cannot be used alongside `socksProxy`, `httpProxy`, or `agent`.
+	 * Cannot be used alongside {@link ConstructorOptions.socksProxy}, {@link ConstructorOptions.httpProxy}, or
+	 * {@link ConstructorOptions.agent}.
 	 */
 	localAddress?: string,
 
 	/**
 	 * A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`.
-	 * Cannot be used alongside `localAddress`, `httpProxy`, or `agent`.
+	 * Cannot be used alongside {@link ConstructorOptions.localAddress}, {@link ConstructorOptions.httpProxy}, or
+	 * {@link ConstructorOptions.agent}.
 	 */
 	socksProxy?: string,
 
 	/**
 	 * A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`.
-	 * Cannot be used alongside `localAddress`, `socksProxy`, or `agent`.
+	 * Cannot be used alongside {@link ConstructorOptions.localAddress}, {@link ConstructorOptions.socksProxy}, or
+	 * {@link ConstructorOptions.agent}.
 	 */
 	httpProxy?: string,
 
 	/**
 	 * An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
-	 * Cannot be used alongside `localAddress`, `socksProxy`, or `httpProxy`.
+	 * Cannot be used alongside {@link ConstructorOptions.localAddress}, {@link ConstructorOptions.socksProxy}, or
+	 * {@link ConstructorOptions.httpProxy}.
 	 */
 	agent?: HTTPS.Agent,
 
 	/**
 	 * A string containing the user-agent you want to use when communicating with Steam.
-	 * Only effective when using EAuthTokenPlatformType.WebBrowser.
+	 * Only effective when using {@link EAuthTokenPlatformType.WebBrowser | EAuthTokenPlatformType.WebBrowser}.
 	 */
 	userAgent?: string,
 
