@@ -12,13 +12,56 @@ import {decodeJwt, defaultUserAgent} from './helpers';
 import ESessionPersistence from './enums-steam/ESessionPersistence';
 import EAuthTokenPlatformType from './enums-steam/EAuthTokenPlatformType';
 
+/**
+ * Using CommonJS:
+ * ```js
+ * const {LoginApprover} = require('steam-session');
+ * ```
+ *
+ * Using ES6 modules:
+ * ```js
+ * import {LoginSession} from 'steam-session';
+ * ```
+ *
+ * The {@link LoginApprover} class can be used to approve a login attempt that was started with a QR code.
+ *
+ * @see Example: [approve-qr.ts](https://github.com/DoctorMcKay/node-steam-session/blob/master/examples/approve-qr.ts)
+ */
 export default class LoginApprover {
-	private _accessToken: string;
+	/**
+	 * A `string` or `Buffer` containing your shared secret. This is automatically set by the {@link constructor}, but
+	 * you can also manually assign it if you need to set a new shared secret for some reason.
+	 *
+	 * If this is a `string`, it must be either hex- or base64-encoded.
+	 */
 	sharedSecret: string|Buffer;
+
+	private _accessToken: string;
 
 	private _webClient: HttpClient;
 	private _handler: AuthenticationClient;
 
+	/**
+	 *
+	 * @param {string} accessToken - A valid access token for the account you want to approve logins for. This access token
+	 * **(not refresh token)** must have been created using the {@link EAuthTokenPlatformType.MobileApp} platform type.
+	 * @param {string|Buffer} sharedSecret - Your account's TOTP shared secret. If this is a string, it must be hex- or
+	 * base64-encoded.
+	 * @param {ConstructorOptions} [options]
+	 * @return
+	 *
+	 * Constructors a new `LoginApprover` instance. Example usage:
+	 *
+	 * ```js
+	 * import {LoginApprover} from 'steam-session';
+	 *
+	 * let approver = new LoginApprover('eyAid...', 'oTVMfZJ9uHXo3m9MwTD9IOEWQaw=');
+	 * ```
+	 *
+	 * An `Error` will be thrown if your `accessToken` isn't a well-formed JWT, if it's a refresh token rather than an
+	 * access token, or if it's an access token that was not generated using
+	 * {@link EAuthTokenPlatformType.MobileApp | EAuthTokenPlatformType.MobileApp}.
+	 */
 	constructor(accessToken: string, sharedSecret: string|Buffer, options?: ConstructorOptions) {
 		options = options || {};
 
@@ -50,6 +93,10 @@ export default class LoginApprover {
 		});
 	}
 
+	/**
+	 * **Read-only.** A [SteamID](https://www.npmjs.com/package/steamid) instance containing the SteamID for the account
+	 * to which the provided {@link accessToken} belongs. Populated immediately after {@link accessToken} is set.
+	 */
 	get steamID(): SteamID {
 		if (this.accessToken) {
 			let decodedToken = decodeJwt(this.accessToken);
@@ -59,6 +106,14 @@ export default class LoginApprover {
 		}
 	}
 
+	/**
+	 * A `string` containing your access token. This is automatically set by the constructor, but you can also manually
+	 * assign it if you need to set a new access token.
+	 *
+	 * An `Error` will be thrown when you set this property if you set it to a valid that isn't a well-formed JWT, if
+	 * it's a refresh token rather than an access token, or if it's an access token that was not generated using
+	 * {@link EAuthTokenPlatformType.MobileApp | EAuthTokenPlatformType.MobileApp}.
+	 */
 	get accessToken(): string { return this._accessToken; }
 	set accessToken(token: string) {
 		let decoded = decodeJwt(token);
@@ -90,6 +145,15 @@ export default class LoginApprover {
 		return Buffer.from(this.sharedSecret, 'base64');
 	}
 
+	/**
+	 * @param {string} qrChallengeUrl - The QR challenge URL from a {@link steam-session.LoginSession.startWithQR} call
+	 * @return
+	 *
+	 * Retrieves info for an auth session given a QR challenge URL. Once you call this,
+	 * {@link steam-session.LoginSession.remoteInteraction} will be emitted. If the QR auth session was initiated within
+	 * a legitimate Steam client or website, a loading indicator will be overlayed on the QR code to indicate that the
+	 * session is being dealt with on a mobile device.
+	 */
 	async getAuthSessionInfo(qrChallengeUrl: string): Promise<AuthSessionInfo> {
 		let {clientId} = decodeQrUrl(qrChallengeUrl);
 		let result = await this._handler.getAuthSessionInfo(this._accessToken, {clientId});
@@ -111,6 +175,19 @@ export default class LoginApprover {
 		};
 	}
 
+	/**
+	 * @param {ApproveAuthSessionRequest} details
+	 * @return
+	 *
+	 * Approves or denies an auth session from a QR URL. If you pass `true` for
+	 * {@link method-params.ApproveAuthSessionRequest.approve}, then the next poll from the {@link steam-session.LoginSession}
+	 * will return access tokens. If you pass `false`, then the {@link steam-session.LoginSession} will emit an
+	 * {@link steam-session.LoginSession.error} event with {@link EResult.FileNotFound}.
+	 *
+	 * Returns a Promise which resolves with no value. Once this Promise resolves, you could call
+	 * {@link steam-session.LoginSession.forcePoll}, and the {@link steam-session.LoginSession} should then immediately
+	 * emit {@link steam-session.LoginSession.authenticated}.
+	 */
 	async approveAuthSession(details: ApproveAuthSessionRequest): Promise<void> {
 		let {clientId, version} = decodeQrUrl(details.qrChallengeUrl);
 

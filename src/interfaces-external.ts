@@ -19,6 +19,8 @@ export interface ConstructorOptions {
 	 * An `ITransport` instance, if you need to specify a custom transport. If omitted, defaults to a
 	 * `WebSocketCMTransport` instance for `SteamClient` platform types, and a `WebApiTransport` instance for all other
 	 * platform types. In all likelihood, you don't need to use this.
+	 *
+	 * If you specify a custom transport, then you are responsible for handling proxy or agent usage in your transport.
 	 */
 	transport?: ITransport,
 
@@ -126,23 +128,54 @@ export interface StartSessionResponseValidAction {
 }
 
 export interface AuthSessionInfo {
+	/**
+	 * The origin IP address of the QR login attempt
+	 */
 	ip: string;
 	location: {
+		/**
+		 * A string containing geo coordinates
+		 */
 		geoloc: string;
 		city: string;
 		state: string;
 	}
+	/**
+	 * The {@link EAuthTokenPlatformType} provided for the QR code
+	 */
 	platformType: EAuthTokenPlatformType;
+	/**
+	 * The device name provided when the QR code was generated (likely a browser user-agent string)
+	 */
 	deviceFriendlyName: string;
+	/**
+	 * The version from the QR code. Probably not useful to you.
+	 */
 	version: number;
 	loginHistory: EAuthSessionSecurityHistory;
+	/**
+	 * Indicates whether the location you requested the auth session info from doesn't match the location where the QR
+	 * code was generated
+	 */
 	locationMismatch: boolean;
+	/**
+	 * Indicates "whether this login has seen high usage recently"
+	 */
 	highUsageLogin: boolean;
+	/**
+	 * The {@link ESessionPersistence} requested for this login
+	 */
 	requestedPersistence: ESessionPersistence;
 }
 
 export interface ApproveAuthSessionRequest {
+	/**
+	 * A `string` containing the QR challenge URL from a {@link steam-session.LoginSession.startWithQR} call
+	 */
 	qrChallengeUrl: string;
+	/**
+	 * `true` to approve the login, or `false` to deny
+	 */
 	approve: boolean;
 	persistence?: ESessionPersistence;
 }
