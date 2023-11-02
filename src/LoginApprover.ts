@@ -50,7 +50,7 @@ export default class LoginApprover {
 	 * @param {ConstructorOptions} [options]
 	 * @return
 	 *
-	 * Constructors a new `LoginApprover` instance. Example usage:
+	 * Constructs a new `LoginApprover` instance. Example usage:
 	 *
 	 * ```js
 	 * import {LoginApprover} from 'steam-session';
@@ -182,7 +182,7 @@ export default class LoginApprover {
 	 * Approves or denies an auth session from a QR URL. If you pass `true` for
 	 * {@link method-params.ApproveAuthSessionRequest.approve}, then the next poll from the {@link steam-session.LoginSession}
 	 * will return access tokens. If you pass `false`, then the {@link steam-session.LoginSession} will emit an
-	 * {@link steam-session.LoginSession.error} event with {@link EResult.FileNotFound}.
+	 * {@link steam-session.LoginSession.error} event with EResult {@link EResult.FileNotFound}.
 	 *
 	 * Returns a Promise which resolves with no value. Once this Promise resolves, you could call
 	 * {@link steam-session.LoginSession.forcePoll}, and the {@link steam-session.LoginSession} should then immediately
