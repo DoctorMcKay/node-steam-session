@@ -22,8 +22,19 @@ export interface ApiResponse {
 }
 
 /**
- * You can define your own custom transport to communicate with the Steam auth server. If you don't, then steam-session
- * will automatically select an appropriate transport depending on the token platform type.
+ * ```js
+ * import type {ITransport, ApiRequest, ApiResponse} from 'steam-session';
+ * ```
+ *
+ * It's possible to define a custom transport to be used when interacting with the Steam login server. The default
+ * transport used to interact with the Steam login server is chosen depending on your provided
+ * {@link steam-session.EAuthTokenPlatformType}.
+ *
+ * For the {@link steam-session.EAuthTokenPlatformType.SteamClient} platform type, a
+ * [WebSocketCMTransport](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/transports/WebSocketCMTransport.ts)
+ * will be used to communicate with a CM server using a WebSocket. For other platform types, a
+ * [WebApiTransport](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/transports/WebApiTransport.ts)
+ * will be used to interact with the Steam login server using api.steampowered.com.
  *
  * **You almost definitely don't need to do this.** This is used by steam-user to communicate with the auth server over
  * the same channel as the rest of its network communication. Unless this matches your use-case, I cannot think of any

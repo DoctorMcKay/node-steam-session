@@ -45,7 +45,28 @@ async function main() {
 
 		enumValues.sort((a, b) => a.value < b.value ? -1 : 1);
 
-		let output = `${GENERATED_FILE_HEADER}enum ${name} {\n`;
+		let tsDoc = '';
+		switch (name) {
+			case 'EAuthTokenPlatformType':
+				tsDoc = 'Contains the different platform types that can be authenticated for. You should specify the ' +
+					'correct platform type when you instantiate a {@link steam-session.LoginSession} object.\n\n' +
+					'Audiences present in tokens issued for different platform types:\n' +
+					' - {@link steam-session.EAuthTokenPlatformType.SteamClient}: `[\'web\', \'client\']`\n' +
+					' - {@link steam-session.EAuthTokenPlatformType.WebBrowser}: `[\'web\']`\n' +
+					' - {@link steam-session.EAuthTokenPlatformType.MobileApp}: `[\'web\', \'mobile\']`';
+				break;
+
+			case 'EResult':
+				tsDoc = 'Contains possible result codes. This is a very large enum that is used throughout Steam, so ' +
+					'most values in this enum won\'t be relevant when authenticating.';
+				break;
+		}
+
+		if (tsDoc) {
+			tsDoc = `/**\n${tsDoc.split('\n').map(l => ` * ${l}`).join('\n')}\n */\n`;
+		}
+
+		let output = `${GENERATED_FILE_HEADER}${tsDoc}enum ${name} {\n`;
 		output += enumValues.map(({name, value}) => `\t${name} = ${value}`).join(',\n');
 		output += `\n}\n\nexport default ${name};\n`;
 
