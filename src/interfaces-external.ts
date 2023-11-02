@@ -23,7 +23,7 @@ export interface ConstructorOptions {
 	transport?: ITransport,
 
 	/**
-	 * A string containing the local IP address you want to use. For example, '11.22.33.44'.
+	 * A string containing the local IP address you want to use. For example, `11.22.33.44`.
 	 * Cannot be used alongside `socksProxy`, `httpProxy`, or `agent`.
 	 */
 	localAddress?: string,

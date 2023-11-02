@@ -1,3 +1,6 @@
+// eslint-disable-next-line no-unused-vars
+import type {ConstructorOptions} from '../interfaces-external';
+
 import EResult from '../enums-steam/EResult';
 
 /**
@@ -22,7 +25,14 @@ export interface ApiResponse {
 }
 
 /**
- * @hidden
+ * You can define your own custom transport to communicate with the Steam auth server. If you don't, then steam-session
+ * will automatically select an appropriate transport depending on the token platform type.
+ *
+ * **You almost definitely don't need to do this.** This is used by steam-user to communicate with the auth server over
+ * the same channel as the rest of its network communication. Unless this matches your use-case, I cannot think of any
+ * reason why you'd need to implement your own custom transport unless you for some reason need to tunnel requests over
+ * an entirely different network protocol. If you simply need to proxy requests, you should instead use
+ * {@link ConstructorOptions.httpProxy} or {@link ConstructorOptions.socksProxy}.
  */
 export default interface ITransport {
     /**
