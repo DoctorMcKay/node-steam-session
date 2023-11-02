@@ -29,10 +29,10 @@ export interface ApiResponse {
  * the same channel as the rest of its network communication. Unless this matches your use-case, I cannot think of any
  * reason why you'd need to implement your own custom transport unless you for some reason need to tunnel requests over
  * an entirely different network protocol. If you simply need to proxy requests, you should instead use
- * {@link ConstructorOptions.httpProxy}, {@link ConstructorOptions.socksProxy}, or {@link ConstructorOptions.agent}.
+ * {@link method-params.ConstructorOptions.httpProxy}, {@link method-params.ConstructorOptions.socksProxy}, or
+ * {@link method-params.ConstructorOptions.agent}.
  *
- * If you do need to implement ITransport, it will be helpful to review
- * [ITransport.ts](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/transports/ITransport.ts).
+ * @see [ITransport.ts](https://github.com/DoctorMcKay/node-steam-session/blob/master/src/transports/ITransport.ts)
  */
 export default interface ITransport {
     /**
