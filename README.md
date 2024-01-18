@@ -412,7 +412,7 @@ attempt if you already have a valid refresh token. Returns a Promise.
 On failure, the Promise will be rejected. Depending on the nature of the failure, an EResult may or may not be available.
 
 On success, the Promise will be resolved with an array of strings. Each string contains a cookie, e.g.
-`'steamLoginSecure=blahblahblahblah'`.
+`'steamLoginSecure=blahblahblahblah; Path=/; Secure; HttpOnly; SameSite=None; Domain=steamcommunity.com'`.
 
 Here's an example of how you can get new web cookies when you already have a valid refresh token:
 
