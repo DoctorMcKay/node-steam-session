@@ -865,10 +865,11 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 				return reject(new Error('No steamLoginSecure cookie in result'));
 			}
 
-			resolve(result.headers['set-cookie'].map(c => c.split(';')[0].trim()));
+			const domain = new URL(url).host;
+			resolve(result.headers['set-cookie'].map(cookie => `${cookie}; Domain=${domain}`));
 		}));
 
-		let cookies = await promiseAny(transfers) as string[];
+		let cookies = await Promise.all(transfers) as string[];
 		if (!cookies.some((c) => c.includes('sessionid'))) {
 			cookies.push(`sessionid=${sessionId}`);
 		}
@@ -1016,29 +1017,4 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	 * @event
 	 */
 	static error = 'error';
-}
-
-/**
- * @param {Promise[]} promises
- * @returns {Promise}
- */
-function promiseAny(promises): Promise<any> {
-	// for node <15 compat
-	return new Promise((resolve, reject) => {
-		let pendingPromises = promises.length;
-		let rejections = [];
-		promises.forEach((promise) => {
-			promise.then((result) => {
-				pendingPromises--;
-				resolve(result);
-			}).catch((err) => {
-				pendingPromises--;
-				rejections.push(err);
-
-				if (pendingPromises == 0) {
-					reject(rejections[0]);
-				}
-			});
-		});
-	});
 }
