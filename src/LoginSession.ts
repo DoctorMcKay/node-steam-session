@@ -865,7 +865,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 				return reject(new Error('No steamLoginSecure cookie in result'));
 			}
 
-			const domain = new URL(url).host;
+			let domain = new URL(url).host;
 			resolve(result.headers['set-cookie'].map(cookie => `${cookie}; Domain=${domain}`));
 		}));
 
