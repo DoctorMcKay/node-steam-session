@@ -842,7 +842,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
 		// successful transfer (hence the usage of promsieAny), but we execute them all for robustness in case one fails.
 		// As long as one succeeds, we're good.
-		let transfers = finalizeResponse.jsonBody.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
+		let transfers:Promise<string[]>[] = finalizeResponse.jsonBody.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
 			let body = {steamID: this.steamID.getSteamID64(), ...params};
 			debug('POST %s %o', url, body);
 
@@ -866,13 +866,23 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			}
 
 			let domain = new URL(url).host;
-			resolve(result.headers['set-cookie'].map(cookie => `${cookie}; Domain=${domain}`));
+			resolve(
+				result.headers['set-cookie'].map(
+					cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie
+				)
+			);
 		}));
 
-		let cookies = await Promise.all(transfers) as string[];
-		if (!cookies.some((c) => c.includes('sessionid'))) {
-			cookies.push(`sessionid=${sessionId}`);
-		}
+		let cookies:string[] = [];
+		(await Promise.all(transfers)).forEach((domainCookies) => {
+			cookies = cookies.concat(domainCookies);
+		});
+
+		// Filter out any sessionid cookies we might have, since we want to set one that works for everything
+		cookies = cookies.filter(c => !c.startsWith('sessionid='));
+
+		// Now add in a sessionid cookie
+		cookies.push(`sessionid=${sessionId}`);
 
 		return cookies;
 	}
