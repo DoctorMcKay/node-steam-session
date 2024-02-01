@@ -1,5 +1,5 @@
 import StdLib from '@doctormckay/stdlib';
-import {HttpClient, HttpResponse} from '@doctormckay/stdlib/http';
+import {HttpClient} from '@doctormckay/stdlib/http';
 import {randomBytes} from 'crypto';
 import createDebug from 'debug';
 import HTTPS from 'https';
@@ -839,47 +839,39 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			throw err;
 		}
 
-		// Now we want to execute all transfers specified in the finalizelogin response. Technically we only need one
-		// successful transfer (hence the usage of promsieAny), but we execute them all for robustness in case one fails.
-		// As long as one succeeds, we're good.
-		let transfers:Promise<string[]>[] = finalizeResponse.jsonBody.transfer_info.map(({url, params}) => new Promise(async (resolve, reject) => {
+		let domain = new URL(finalizeResponse.url).host;
+
+		let cookies:string[] = finalizeResponse.headers['set-cookie']
+			.map(cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie);
+
+		// Now we want to execute all transfers specified in the finalizelogin response.
+		await Promise.all(finalizeResponse.jsonBody.transfer_info.map(async ({url, params}) => {
 			let body = {steamID: this.steamID.getSteamID64(), ...params};
 			debug('POST %s %o', url, body);
 
-			let result: HttpResponse;
-			try {
-				result = await this._webClient.request({
-					method: 'POST',
-					url,
-					multipartForm: HttpClient.simpleObjectToMultipartForm(body)
-				});
-			} catch (error) {
-				return reject(error);
-			}
+			let result = await this._webClient.request({
+				method: 'POST',
+				url,
+				multipartForm: HttpClient.simpleObjectToMultipartForm(body)
+			});
 
 			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
-				return reject(new Error('No Set-Cookie header in result'));
+				throw new Error('No Set-Cookie header in result');
 			}
 
 			if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
-				return reject(new Error('No steamLoginSecure cookie in result'));
+				throw new Error('No steamLoginSecure cookie in result');
 			}
 
-			let domain = new URL(url).host;
-			resolve(
-				result.headers['set-cookie'].map(
-					cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie
-				)
-			);
+			let domain = new URL(result.url).host;
+
+			result.headers['set-cookie']
+				.map(cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie)
+				.forEach(cookie => cookies.push(cookie));
 		}));
 
-		let cookies:string[] = [];
-		(await Promise.all(transfers)).forEach((domainCookies) => {
-			cookies = cookies.concat(domainCookies);
-		});
-
 		// Filter out any sessionid cookies we might have, since we want to set one that works for everything
-		cookies = cookies.filter(c => !c.startsWith('sessionid='));
+		cookies = cookies.filter(cookie => !cookie.startsWith('sessionid='));
 
 		// Now add in a sessionid cookie
 		cookies.push(`sessionid=${sessionId}`);
