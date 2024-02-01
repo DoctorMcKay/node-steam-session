@@ -874,7 +874,11 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		cookies = cookies.filter(cookie => !cookie.startsWith('sessionid='));
 
 		// Now add in a sessionid cookie
-		cookies.push(`sessionid=${sessionId}`);
+		[
+			...new Set(cookies.map(cookie => cookie.split('Domain=')[1].split(';')[0]))
+		]
+			.filter(domain => domain !== 'login.steampowered.com')
+			.forEach(domain => cookies.push(`sessionid=${sessionId}; Path=/; Secure; SameSite=None; Domain=${domain}`));
 
 		return cookies;
 	}
