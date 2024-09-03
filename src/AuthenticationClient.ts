@@ -70,6 +70,7 @@ export default class AuthenticationClient extends EventEmitter {
 	_transportCloseTimeout: NodeJS.Timeout;
 	_webUserAgent: string;
 	_machineId?: Buffer|boolean;
+	_clientFriendlyName?: string;
 
 	constructor(options: AuthenticationClientConstructorOptions) {
 		super();
@@ -83,6 +84,7 @@ export default class AuthenticationClient extends EventEmitter {
 		}
 
 		this._machineId = options.machineId;
+		this._clientFriendlyName = options.clientFriendlyName;
 	}
 
 	async getRsaKey(accountName: string): Promise<CAuthentication_GetPasswordRSAPublicKey_Response> {
@@ -353,10 +355,12 @@ export default class AuthenticationClient extends EventEmitter {
 	_getPlatformData(): PlatformData {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
+				let machineName = this._clientFriendlyName || getSpoofedHostname();
+
 				let refererQuery = {
 					IN_CLIENT: 'true',
 					WEBSITE_ID: 'Client',
-					LOCAL_HOSTNAME: getSpoofedHostname(),
+					LOCAL_HOSTNAME: machineName,
 					WEBAPI_BASE_URL: 'https://api.steampowered.com/',
 					STORE_BASE_URL: 'https://store.steampowered.com/',
 					USE_POPUPS: 'true',
@@ -379,7 +383,7 @@ export default class AuthenticationClient extends EventEmitter {
 					// device_details is also not sent for SteamClient logins, matching the behavior of the official client
 					// in the past, the client did send these details, but not anymore
 					deviceDetails: {
-						device_friendly_name: refererQuery.LOCAL_HOSTNAME,
+						device_friendly_name: machineName,
 						platform_type: EAuthTokenPlatformType.SteamClient,
 						os_type: EOSType.Win11,
 						// EGamingDeviceType full definition is unknown, but 1 appears to be a desktop PC

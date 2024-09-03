@@ -22,48 +22,54 @@ export interface ConstructorOptions {
 	 *
 	 * If you specify a custom transport, then you are responsible for handling proxy or agent usage in your transport.
 	 */
-	transport?: ITransport,
+	transport?: ITransport;
 
 	/**
 	 * A string containing the local IP address you want to use. For example, `11.22.33.44`.
 	 * Cannot be used alongside {@link ConstructorOptions.socksProxy}, {@link ConstructorOptions.httpProxy}, or
 	 * {@link ConstructorOptions.agent}.
 	 */
-	localAddress?: string,
+	localAddress?: string;
 
 	/**
 	 * A string containing a URI for a SOCKS proxy. For example, `socks5://user:pass@1.2.3.4:1080`.
 	 * Cannot be used alongside {@link ConstructorOptions.localAddress}, {@link ConstructorOptions.httpProxy}, or
 	 * {@link ConstructorOptions.agent}.
 	 */
-	socksProxy?: string,
+	socksProxy?: string;
 
 	/**
 	 * A string containing a URI for an HTTP proxy. For example, `http://user:pass@1.2.3.4:80`.
 	 * Cannot be used alongside {@link ConstructorOptions.localAddress}, {@link ConstructorOptions.socksProxy}, or
 	 * {@link ConstructorOptions.agent}.
 	 */
-	httpProxy?: string,
+	httpProxy?: string;
 
 	/**
 	 * An `https.Agent` instance to use for requests. If omitted, a new `https.Agent` will be created internally.
 	 * Cannot be used alongside {@link ConstructorOptions.localAddress}, {@link ConstructorOptions.socksProxy}, or
 	 * {@link ConstructorOptions.httpProxy}.
 	 */
-	agent?: HTTPS.Agent,
+	agent?: HTTPS.Agent;
 
 	/**
 	 * A string containing the user-agent you want to use when communicating with Steam.
 	 * Only effective when using {@link EAuthTokenPlatformType.WebBrowser | EAuthTokenPlatformType.WebBrowser}.
 	 */
-	userAgent?: string,
+	userAgent?: string;
 
 	/**
 	 * Your Steam machine ID, used for SteamClient logins. Pass a Buffer containing your well-formed machine ID, pass
 	 * `true` to have steam-session internally generate a machine ID using the same formula that steam-user uses by
 	 * default, or pass `false`, `null`, or omit to not send a machine ID.
 	 */
-	machineId?: Buffer|boolean
+	machineId?: Buffer|boolean;
+
+	/**
+	 * Your machine's friendly name. Only effective when using {@link EAuthTokenPlatformType.SteamClient}. If omitted,
+	 * a random machine name in the format DESKTOP-ABCDEFG will be generated automatically.
+	 */
+	machineFriendlyName?: string;
 }
 
 export interface StartLoginSessionWithCredentialsDetails {

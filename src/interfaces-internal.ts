@@ -14,11 +14,12 @@ export interface PlatformData {
 }
 
 export interface AuthenticationClientConstructorOptions {
-	platformType: EAuthTokenPlatformType,
-	transport: ITransport,
-	webClient: HttpClient,
-	webUserAgent: string,
-	machineId?: Buffer|boolean
+	platformType: EAuthTokenPlatformType;
+	transport: ITransport;
+	webClient: HttpClient;
+	webUserAgent: string;
+	machineId?: Buffer|boolean;
+	clientFriendlyName?: string;
 }
 
 export interface StartAuthSessionRequest {
