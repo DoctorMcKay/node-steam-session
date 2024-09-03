@@ -128,6 +128,8 @@ export default class AuthenticationClient extends EventEmitter {
 			} else if (this._machineId === true) {
 				data.device_details.machine_id = createMachineId(details.accountName);
 			}
+
+			this._clientFriendlyName = this._clientFriendlyName || getSpoofedHostname(details.accountName);
 		}
 
 		if (details.steamGuardMachineToken) {
