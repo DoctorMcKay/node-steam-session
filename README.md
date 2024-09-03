@@ -263,6 +263,10 @@ event is emitted.
         Steam machine ID. Pass `true` to have steam-session internally generate a machine ID using the [same format that
         steam-user uses](https://github.com/DoctorMcKay/node-steam-user#machineidformat). Pass `false`, `null`, or omit
         this property to not send a machine ID (not sending a machine ID may cause problems in the future).
+    - `machineFriendlyName` - Only applicable when using EAuthTokenPlatformType.SteamClient. Pass a `string` containing
+        the machine name that you want to report to Steam when logging on. If omitted, a machine name will automatically
+        be generated in the format `DESKTOP-ABCDEFG`. Auto-generated machine IDs are always the same on the same machine
+        (it's based on the hash of your actual machine's hostname)
 
 You can only use one of `localAddress`, `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more
 than one of them, an Error will be thrown.
