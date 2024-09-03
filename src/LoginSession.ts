@@ -840,12 +840,13 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 			throw err;
 		}
 
+		// Extract cookies from the finalize response; we want to include steamRefresh_steam in our response.
 		let domain = new URL(finalizeResponse.url).host;
-
 		let cookies:string[] = finalizeResponse.headers['set-cookie']
 			.map(cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie);
 
-		// Now we want to execute all transfers specified in the finalizelogin response.
+		// Now we want to execute all transfers specified in the finalizelogin response, and add their response cookies
+		// to our cookies array.
 		await Promise.all(finalizeResponse.jsonBody.transfer_info.map(async ({url, params}) => {
 			let body = {steamID: this.steamID.getSteamID64(), ...params};
 			debug('POST %s %o', url, body);
@@ -874,10 +875,8 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		// Filter out any sessionid cookies we might have, since we want to set one that works for everything
 		cookies = cookies.filter(cookie => !cookie.startsWith('sessionid='));
 
-		// Now add in a sessionid cookie
-		[
-			...new Set(cookies.map(cookie => cookie.split('Domain=')[1].split(';')[0]))
-		]
+		// Now add in a sessionid cookie for each domain we have cookies for. Use a Set to deduplicate domains.
+		[...new Set(cookies.map(cookie => cookie.split('Domain=')[1].split(';')[0]))]
 			.filter(domain => domain !== 'login.steampowered.com')
 			.forEach(domain => cookies.push(`sessionid=${sessionId}; Path=/; Secure; SameSite=None; Domain=${domain}`));
 
