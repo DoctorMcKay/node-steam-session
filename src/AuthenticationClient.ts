@@ -127,10 +127,6 @@ export default class AuthenticationClient extends EventEmitter {
 			device_details: deviceDetails
 		};
 
-		if (details.platformType == EAuthTokenPlatformType.SteamClient && Buffer.isBuffer(this._machineId)) {
-			data.device_details.machine_id = this._machineId;
-		}
-
 		if (details.steamGuardMachineToken) {
 			if (Buffer.isBuffer(details.steamGuardMachineToken)) {
 				data.guard_data = details.steamGuardMachineToken;
@@ -388,7 +384,8 @@ export default class AuthenticationClient extends EventEmitter {
 						platform_type: EAuthTokenPlatformType.SteamClient,
 						os_type: EOSType.Win11,
 						// EGamingDeviceType full definition is unknown, but 1 appears to be a desktop PC
-						gaming_device_type: 1
+						gaming_device_type: 1,
+						...(Buffer.isBuffer(this._machineId) ? { machine_id: this._machineId } : {})
 					}
 				};
 
