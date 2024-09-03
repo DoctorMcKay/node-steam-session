@@ -237,7 +237,15 @@ export default class WebSocketCMTransport implements ITransport {
 		let msgBody = msg.slice(8 + hdrLength);
 
 		if (!(rawEmsg & PROTO_MASK)) {
-			throw new Error(`Received unexpected non-protobuf message ${rawEmsg}`);
+			if (rawEmsg == EMsg.ClientLogOnResponse) {
+				// We would only expect this to happen if the CM is having a bad time.
+				// Go ahead and just assume our connection is fubar
+				this._disconnectIfApplicable();
+				this._failAllPendingJobs(eresultError(EResult.ServiceUnavailable));
+				return;
+			} else {
+				throw new Error(`Received unexpected non-protobuf message ${rawEmsg}`);
+			}
 		}
 
 		// @ts-ignore
@@ -279,16 +287,8 @@ export default class WebSocketCMTransport implements ITransport {
 				let logOnResponse: CMsgClientLogonResponse = Protos.CMsgClientLogonResponse.toObject(decodedLogOnResponse, {longs: String});
 				debug(`Received ClientLogOnResponse with result: ${EResult[logOnResponse.eresult] || logOnResponse.eresult}`);
 
-				if (this._websocket.state == WsState.Connected) {
-					this._websocket.disconnect();
-					this._websocket = null;
-				}
-
-				for (let i in this._jobs) {
-					let {reject, timeout} = this._jobs[i];
-					clearTimeout(timeout);
-					reject(eresultError(logOnResponse.eresult));
-				}
+				this._disconnectIfApplicable();
+				this._failAllPendingJobs(eresultError(logOnResponse.eresult));
 				break;
 
 			case EMsg.Multi:
@@ -326,6 +326,21 @@ export default class WebSocketCMTransport implements ITransport {
 			let chunkSize = payload.readUInt32LE(0);
 			this._handleWsMessage(payload.slice(4, 4 + chunkSize));
 			payload = payload.slice(4 + chunkSize);
+		}
+	}
+
+	_disconnectIfApplicable() {
+		if (this._websocket.state == WsState.Connected) {
+			this._websocket.disconnect();
+			this._websocket = null;
+		}
+	}
+
+	_failAllPendingJobs(err: Error) {
+		for (let i in this._jobs) {
+			let {reject, timeout} = this._jobs[i];
+			clearTimeout(timeout);
+			reject(err);
 		}
 	}
 
