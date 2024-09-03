@@ -75,7 +75,7 @@ describe('LoginSession tests', () => {
 					});
 
 					expect(req.device_details).toMatchObject({
-						device_friendly_name: getSpoofedHostname(),
+						device_friendly_name: getSpoofedHostname(LOGIN_USERNAME),
 						platform_type: EAuthTokenPlatformType.SteamClient,
 						os_type: 20,
 						gaming_device_type: 1
@@ -198,7 +198,7 @@ describe('LoginSession tests', () => {
 				remember_login: true,
 				website_id: 'Unknown',
 				device_details: {
-					device_friendly_name: getSpoofedHostname(),
+					device_friendly_name: getSpoofedHostname(LOGIN_USERNAME),
 					platform_type: EAuthTokenPlatformType.SteamClient,
 					os_type: 20,
 					gaming_device_type: 1,
