@@ -109,6 +109,12 @@ export default class AuthenticationClient extends EventEmitter {
 	}
 
 	async startSessionWithCredentials(details: StartAuthSessionWithCredentialsRequest): Promise<StartAuthSessionWithCredentialsResponse> {
+		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
+			// For SteamClient logins, we also need a machine id and machine name
+			this._machineId = this._machineId === true ? createMachineId(details.accountName) : this._machineId;
+			this._clientFriendlyName = this._clientFriendlyName || getSpoofedHostname(details.accountName);
+		}
+
 		let {websiteId, deviceDetails} = this._getPlatformData();
 
 		let data:CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData = {
@@ -121,15 +127,8 @@ export default class AuthenticationClient extends EventEmitter {
 			device_details: deviceDetails
 		};
 
-		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
-			// For SteamClient logins, we also need a machine id
-			if (this._machineId && Buffer.isBuffer(this._machineId)) {
-				data.device_details.machine_id = this._machineId;
-			} else if (this._machineId === true) {
-				data.device_details.machine_id = createMachineId(details.accountName);
-			}
-
-			this._clientFriendlyName = this._clientFriendlyName || getSpoofedHostname(details.accountName);
+		if (details.platformType == EAuthTokenPlatformType.SteamClient && Buffer.isBuffer(this._machineId)) {
+			data.device_details.machine_id = this._machineId;
 		}
 
 		if (details.steamGuardMachineToken) {
