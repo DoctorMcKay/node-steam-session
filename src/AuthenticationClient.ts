@@ -19,7 +19,7 @@ import {
 	createMachineId,
 	decodeJwt,
 	eresultError,
-	getSpoofedHostname,
+	createMachineName,
 	isJwtValidForAudience
 } from './helpers';
 import {
@@ -112,7 +112,7 @@ export default class AuthenticationClient extends EventEmitter {
 		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
 			// For SteamClient logins, we also need a machine id and machine name
 			this._machineId = this._machineId === true ? createMachineId(details.accountName) : this._machineId;
-			this._clientFriendlyName = this._clientFriendlyName || getSpoofedHostname(details.accountName);
+			this._clientFriendlyName = this._clientFriendlyName || createMachineName(details.accountName);
 		}
 
 		let {websiteId, deviceDetails} = this._getPlatformData();
@@ -352,7 +352,7 @@ export default class AuthenticationClient extends EventEmitter {
 	_getPlatformData(): PlatformData {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
-				let machineName = this._clientFriendlyName || getSpoofedHostname();
+				let machineName = this._clientFriendlyName || createMachineName();
 
 				let refererQuery = {
 					IN_CLIENT: 'true',

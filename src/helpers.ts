@@ -49,7 +49,7 @@ export function isJwtValidForAudience(jwt:string, audience:string, steamId?:stri
 	return (decodedToken.aud || []).includes(audience);
 }
 
-export function getSpoofedHostname(accountName?: string): string {
+export function createMachineName(accountName?: string): string {
 	let hash = createHash('sha1');
 	hash.update(accountName || hostname());
 	let sha1 = hash.digest();
