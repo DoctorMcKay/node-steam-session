@@ -19,7 +19,7 @@ import {
 	createMachineId,
 	decodeJwt,
 	eresultError,
-	getSpoofedHostname,
+	createMachineName,
 	isJwtValidForAudience
 } from './helpers';
 import {
@@ -109,6 +109,12 @@ export default class AuthenticationClient extends EventEmitter {
 	}
 
 	async startSessionWithCredentials(details: StartAuthSessionWithCredentialsRequest): Promise<StartAuthSessionWithCredentialsResponse> {
+		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
+			// For SteamClient logins, we also need a machine id and machine name
+			this._machineId = this._machineId === true ? createMachineId(details.accountName) : this._machineId;
+			this._clientFriendlyName = this._clientFriendlyName || createMachineName(details.accountName);
+		}
+
 		let {websiteId, deviceDetails} = this._getPlatformData();
 
 		let data:CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData = {
@@ -120,15 +126,6 @@ export default class AuthenticationClient extends EventEmitter {
 			website_id: websiteId,
 			device_details: deviceDetails
 		};
-
-		if (details.platformType == EAuthTokenPlatformType.SteamClient) {
-			// For SteamClient logins, we also need a machine id
-			if (this._machineId && Buffer.isBuffer(this._machineId)) {
-				data.device_details.machine_id = this._machineId;
-			} else if (this._machineId === true) {
-				data.device_details.machine_id = createMachineId(details.accountName);
-			}
-		}
 
 		if (details.steamGuardMachineToken) {
 			if (Buffer.isBuffer(details.steamGuardMachineToken)) {
@@ -355,7 +352,7 @@ export default class AuthenticationClient extends EventEmitter {
 	_getPlatformData(): PlatformData {
 		switch (this._platformType) {
 			case EAuthTokenPlatformType.SteamClient:
-				let machineName = this._clientFriendlyName || getSpoofedHostname();
+				let machineName = this._clientFriendlyName || createMachineName();
 
 				let refererQuery = {
 					IN_CLIENT: 'true',
@@ -387,7 +384,8 @@ export default class AuthenticationClient extends EventEmitter {
 						platform_type: EAuthTokenPlatformType.SteamClient,
 						os_type: EOSType.Win11,
 						// EGamingDeviceType full definition is unknown, but 1 appears to be a desktop PC
-						gaming_device_type: 1
+						gaming_device_type: 1,
+						...(Buffer.isBuffer(this._machineId) ? { machine_id: this._machineId } : {})
 					}
 				};
 

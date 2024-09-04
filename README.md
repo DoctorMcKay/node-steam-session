@@ -265,11 +265,16 @@ event is emitted.
         this property to not send a machine ID (not sending a machine ID may cause problems in the future).
     - `machineFriendlyName` - Only applicable when using EAuthTokenPlatformType.SteamClient. Pass a `string` containing
         the machine name that you want to report to Steam when logging on. If omitted, a machine name will automatically
-        be generated in the format `DESKTOP-ABCDEFG`. Auto-generated machine IDs are always the same on the same machine
-        (it's based on the hash of your actual machine's hostname)
+        be generated in the format `DESKTOP-ABCDEFG`.
 
 You can only use one of `localAddress`, `httpProxy`, `socksProxy` or `agent` at the same time. If you try to use more
 than one of them, an Error will be thrown.
+
+Auto-generated machine names are always the same for the same account (based on hash of account name) if account name is known,
+or always the same for the same machine (based on hash of your machine's hostname) if account name is unknown.
+In other words:
+  - When using `startWithCredentials` method, auto-generated machine name will base on account name
+  - When using `startWithQR` method, auto-generated machine name will base on machine's hostname
 
 If you specify a custom transport, then you are responsible for handling proxy or agent usage in your transport.
 
@@ -579,7 +584,7 @@ If this is a `string`, it must be either hex- or base64-encoded.
 
 ## Methods
 
-### Constructor(accessToken, sharedSecret[, transport])
+### Constructor(accessToken, sharedSecret[, options])
 - `accessToken` - A `string` containing a valid access token for the account you want to approve logins for. This
   access token (**not refresh token**) must have been created using the `MobileApp` platform type.
 - `sharedSecret` - A `string` or `Buffer` containing your account's TOTP shared secret. If this is a string, it must be
