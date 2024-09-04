@@ -7,10 +7,8 @@
 		"esModuleInterop": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		"inlineSourceMap": true,
 		"skipLibCheck": true,
-		"declaration": true,
-		"declarationMap": true
+		"declaration": true
 	},
 	"include": ["src"]
 }
