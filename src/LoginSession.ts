@@ -826,7 +826,11 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		let finalizeResponse = await this._webClient.request({
 			method: 'POST',
 			url: 'https://login.steampowered.com/jwt/finalizelogin',
-			headers: API_HEADERS,
+			headers: {
+				Origin: 'https://steamcommunity.com',
+				Referer: 'https://steamcommunity.com/',
+				...API_HEADERS
+			},
 			multipartForm: HttpClient.simpleObjectToMultipartForm(body)
 		});
 
