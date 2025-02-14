@@ -846,7 +846,7 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 
 		// Extract cookies from the finalize response; we want to include steamRefresh_steam in our response.
 		let domain = new URL(finalizeResponse.url).host;
-		let cookies:string[] = finalizeResponse.headers['set-cookie']
+		let cookies:string[] = (finalizeResponse.headers['set-cookie'] || [])
 			.map(cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie);
 
 		// Now we want to execute all transfers specified in the finalizelogin response, and add their response cookies
