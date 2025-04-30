@@ -793,6 +793,11 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	 * session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ...';
 	 * let cookies = await session.getWebCookies();
 	 * ```
+	 *
+	 * As of 2025-04-30, this method works only for {@link EAuthTokenPlatformType.WebBrowser | EAuthTokenPlatformType.WebBrowser}
+	 * and {@link EAuthTokenPlatformType.MobileApp}. Using {@link EAuthTokenPlatformType.SteamClient} will fail with result
+	 * {@link EResult.AccessDenied}. It is now required to get Steam client web cookies over an authenticated CM session,
+	 * which can be done with node-steam-user.
 	 */
 	async getWebCookies(): Promise<string[]> {
 		if (!this.refreshToken) {
@@ -937,9 +942,10 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 	 * console.log(`New access token: ${session.accessToken}`);
 	 * ```
 	 *
-	 * As of 2023-04-24, this method works for {@link EAuthTokenPlatformType.MobileApp | EAuthTokenPlatformType.MobileApp}
-	 * and {@link EAuthTokenPlatformType.SteamClient}, but using {@link EAuthTokenPlatformType.WebBrowser} will fail
-	 * with response {@link EResult.AccessDenied}.
+	 * As of 2025-04-30, this method works only for {@link EAuthTokenPlatformType.MobileApp | EAuthTokenPlatformType.MobileApp}.
+	 * Using {@link EAuthTokenPlatformType.WebBrowser} will fail with response {@link EResult.AccessDenied}, and
+	 * using {@link EAuthTokenPlatformType.SteamClient} will fail with the same if not sent over an authenticated CM session
+	 * (as done by node-steam-user).
 	 */
 	async refreshAccessToken(): Promise<void> {
 		if (!this.refreshToken) {

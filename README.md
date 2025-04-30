@@ -199,9 +199,12 @@ event is fired.
 
 ### accessToken
 
-A `string` containing your access token. **As of 2023-09-12, Steam does not return an access token in response to
-successful authentication, so this won't be set when the [`authenticated`](#authenticated) event is fired.** This will be set
-after you call [`refreshAccessToken()`](#refreshaccesstoken) or [`renewRefreshToken()`](#renewrefreshtoken).
+A `string` containing your access token.
+
+~~As of 2023-09-12, Steam does not return an access token in response to successful authentication, so this won't be set
+when the [`authenticated`](#authenticated) event is fired.~~ (this behavior has been reverted)
+
+This will be set after you call [`refreshAccessToken()`](#refreshaccesstoken) or [`renewRefreshToken()`](#renewrefreshtoken).
 Also, since [`getWebCookies()`](#getwebcookies) calls `refreshAccessToken()` internally for EAuthTokenPlatformType
 SteamClient or MobileApp, this will also be set after calling `getWebCookies()` for those platform types.
 
@@ -433,6 +436,12 @@ session.refreshToken = 'eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyJpc3MiOiJ.
 let cookies = await session.getWebCookies();
 ```
 
+As of 2025-04-30, this method works for EAuthTokenPlatformType WebBrowser and MobileApp, but using SteamClient will
+fail with response `AccessDenied` unless sent over an authenticated CM session.
+When using a SteamClient refresh token, you should use node-steam-user's
+[`webLogOn()`](https://github.com/DoctorMcKay/node-steam-user?tab=readme-ov-file#weblogon) method and
+[`webSession`](https://github.com/DoctorMcKay/node-steam-user?tab=readme-ov-file#websession) event.
+
 ### refreshAccessToken()
 
 As long as a [`refreshToken`](#refreshtoken) is set, you can call this method to obtain a new access token.
@@ -453,8 +462,12 @@ await session.refreshAccessToken();
 console.log(`New access token: ${session.accessToken}`);
 ```
 
-As of 2023-04-24, this method works for EAuthTokenPlatformType MobileApp and SteamClient, but using WebBrowser will fail
-with response `AccessDenied`.
+As of 2025-04-30, this method works only for EAuthTokenPlatformType MobileApp, but using WebBrowser will fail
+with response `AccessDenied`, and SteamClient tokens will fail with the same response unless sent over an authenticated
+CM session. When using a SteamClient refresh token, you should use node-steam-user's
+[`webLogOn()`](https://github.com/DoctorMcKay/node-steam-user?tab=readme-ov-file#weblogon) method and
+[`webSession`](https://github.com/DoctorMcKay/node-steam-user?tab=readme-ov-file#websession) event to get web cookies
+(which is the same as an access token).
 
 ### renewRefreshToken()
 
@@ -483,8 +496,11 @@ if (renewed) {
 }
 ```
 
-As of 2023-04-24, this method works for EAuthTokenPlatformType MobileApp and SteamClient, but using WebBrowser will fail
-with response `AccessDenied`.
+As of 2025-04-30, this method works only for EAuthTokenPlatformType MobileApp, but using WebBrowser will fail
+with response `AccessDenied`, and SteamClient tokens will fail with the same response unless sent over an authenticated
+CM session. When using a SteamClient refresh token, you should use node-steam-user's
+[`renewRefreshTokens`](https://github.com/DoctorMcKay/node-steam-user?tab=readme-ov-file#renewrefreshtokens) option and
+[`refreshToken`](https://github.com/DoctorMcKay/node-steam-user?tab=readme-ov-file#refreshtoken) event to renew refresh tokens.
 
 ## Events
 
