@@ -852,28 +852,56 @@ export default class LoginSession extends TypedEmitter<LoginSessionEvents> {
 		// Now we want to execute all transfers specified in the finalizelogin response, and add their response cookies
 		// to our cookies array.
 		await Promise.all(finalizeResponse.jsonBody.transfer_info.map(async ({url, params}) => {
-			let body = {steamID: this.steamID.getSteamID64(), ...params};
-			debug('POST %s %o', url, body);
+			// Attempt a few times in case we get a transient error
+			const ATTEMPT_COUNT = 5;
+			for (let i = 0; i < ATTEMPT_COUNT; i++) {
+				try {
+					let body = {steamID: this.steamID.getSteamID64(), ...params};
+					debug('POST %s %o', url, body);
 
-			let result = await this._webClient.request({
-				method: 'POST',
-				url,
-				multipartForm: HttpClient.simpleObjectToMultipartForm(body)
-			});
+					let result = await this._webClient.request({
+						method: 'POST',
+						url,
+						multipartForm: HttpClient.simpleObjectToMultipartForm(body)
+					});
 
-			if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
-				throw new Error('No Set-Cookie header in result');
+					if (result.statusCode >= 400) {
+						throw new Error(`HTTP error ${result.statusCode}`);
+					}
+
+					if (result.jsonBody && result.jsonBody.result) {
+						if (result.jsonBody.result != EResult.OK) {
+							throw eresultError(result.jsonBody.result);
+						}
+					}
+
+					if (!result.headers || !result.headers['set-cookie'] || result.headers['set-cookie'].length == 0) {
+						throw new Error('No Set-Cookie header in result');
+					}
+
+					if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
+						throw new Error('No steamLoginSecure cookie in result');
+					}
+
+					let domain = new URL(result.url).host;
+
+					result.headers['set-cookie']
+						.map(cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie)
+						.forEach(cookie => cookies.push(cookie));
+
+					// success, end retries
+					break;
+				} catch (ex) {
+					if (i == ATTEMPT_COUNT - 1) {
+						// We failed all attempts
+						throw ex;
+					}
+
+					// We failed this attempt, but let's try again
+					await new Promise(resolve => setTimeout(resolve, 500));
+					debug(`[${i + 1}/${ATTEMPT_COUNT}] Transfer ${url} failed: ${ex.message}`);
+				}
 			}
-
-			if (!result.headers['set-cookie'].some(c => c.startsWith('steamLoginSecure='))) {
-				throw new Error('No steamLoginSecure cookie in result');
-			}
-
-			let domain = new URL(result.url).host;
-
-			result.headers['set-cookie']
-				.map(cookie => !cookie.toLowerCase().includes('domain=') ? `${cookie}; Domain=${domain}` : cookie)
-				.forEach(cookie => cookies.push(cookie));
 		}));
 
 		// Filter out any sessionid cookies we might have, since we want to set one that works for everything
