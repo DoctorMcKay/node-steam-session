@@ -414,7 +414,7 @@ export default class AuthenticationClient extends EventEmitter {
 						cookie: 'mobileClient=android; mobileClientVersion=777777 3.0.0'
 					},
 					deviceDetails: {
-						device_friendly_name: 'Galaxy S22',
+						device_friendly_name: 'Galaxy S25',
 						platform_type: EAuthTokenPlatformType.MobileApp,
 						os_type: EOSType.AndroidUnknown,
 						gaming_device_type: 528 // dunno
