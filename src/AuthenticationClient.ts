@@ -410,7 +410,7 @@ export default class AuthenticationClient extends EventEmitter {
 				return {
 					websiteId: 'Mobile',
 					headers: {
-						'user-agent': 'okhttp/3.12.12',
+						'user-agent': 'okhttp/4.9.2',
 						cookie: 'mobileClient=android; mobileClientVersion=777777 3.0.0'
 					},
 					deviceDetails: {
