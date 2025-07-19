@@ -411,6 +411,8 @@ export default class AuthenticationClient extends EventEmitter {
 					websiteId: 'Mobile',
 					headers: {
 						'user-agent': 'okhttp/4.9.2',
+						// WebApiTransport checks for mobileClientVersion= in sendRequest() to determine if this is a mobile app request.
+						// If this cookie ends up going away someday, update that check.
 						cookie: 'mobileClient=android; mobileClientVersion=777777 3.10.3'
 					},
 					deviceDetails: {

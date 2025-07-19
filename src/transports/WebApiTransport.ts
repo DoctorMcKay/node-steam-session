@@ -44,6 +44,11 @@ export default class WebApiTransport implements ITransport {
 			(method == 'GET' ? queryString : form).input_protobuf_encoded = request.requestData.toString('base64');
 		}
 
+		// For some unknown reason, the mobile app includes this in the query string for GET requests
+		if (method == 'GET' && (headers.cookie || '').includes('mobileClientVersion=')) {
+			queryString.origin = 'SteamMobile';
+		}
+
 		debug('%s %s %o %o', method, url, queryString, form);
 
 		let requestOptions:HttpRequestOptions = {
