@@ -1,6 +1,6 @@
 {
 	"name": "steam-session",
-	"version": "1.9.3",
+	"version": "1.9.4",
 	"description": "Enables authenticating with Steam",
 	"keywords": [
 		"steam"
