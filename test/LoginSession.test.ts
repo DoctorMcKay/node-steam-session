@@ -14,7 +14,7 @@ import {
 	LoginSession
 } from '../src';
 import {createTokenPair, protobufDecodeRequest} from './src/helpers';
-import {getSpoofedHostname} from '../src/helpers';
+import {createMachineName} from '../src/helpers';
 import {
 	CAuthentication_BeginAuthSessionViaCredentials_Request_BinaryGuardData,
 	CAuthentication_BeginAuthSessionViaCredentials_Response,
@@ -75,7 +75,7 @@ describe('LoginSession tests', () => {
 					});
 
 					expect(req.device_details).toMatchObject({
-						device_friendly_name: getSpoofedHostname(),
+						device_friendly_name: createMachineName(LOGIN_USERNAME),
 						platform_type: EAuthTokenPlatformType.SteamClient,
 						os_type: 20,
 						gaming_device_type: 1
@@ -198,7 +198,7 @@ describe('LoginSession tests', () => {
 				remember_login: true,
 				website_id: 'Unknown',
 				device_details: {
-					device_friendly_name: getSpoofedHostname(),
+					device_friendly_name: createMachineName(LOGIN_USERNAME),
 					platform_type: EAuthTokenPlatformType.SteamClient,
 					os_type: 20,
 					gaming_device_type: 1,
